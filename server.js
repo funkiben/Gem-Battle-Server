@@ -17,3 +17,5 @@ var server = net.createServer(function (socket) {
 server.listen(8080, function() {
 	console.log("server is listening");
 })
+
+// good tcp node server example: https://gist.github.com/creationix/707146
