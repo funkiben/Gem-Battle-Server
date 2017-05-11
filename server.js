@@ -41,7 +41,6 @@ class Game {
 		this.player2 = player2;
 		
 		this.board = new Array(6);
-		this.board.fill(new Array(6));
 		
 		this.player1Inv = new Array(6);
 		this.player2Inv = new Array(6);
@@ -49,6 +48,8 @@ class Game {
 		for (var i = 0; i < 6; i++) {
 			this.player1Inv[i] = Math.floor(Math.random() * 6);
 			this.player2Inv[i] = Math.floor(Math.random() * 6);
+			
+			this.board[i] = new Array(6);
 		}
 		
 		for (var x = 0; x < 6; x++) {
@@ -65,7 +66,6 @@ class Game {
 		for (var y = 0; y < 6; y++) {
 			for (var x = 0; x < 6; x++) {
 				buf.writeInt8(this.board[x][y], ((y * 6) + x) + 2);
-				console.log(y * 6 + x + 2);
 			}
 		}
 		
