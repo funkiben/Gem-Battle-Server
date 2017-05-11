@@ -20,7 +20,10 @@ var server = net.createServer(function (socket) {
 	socket.write(buf);
 	
 	socket.on("data", function(data) {
-		console.log(data);
+		console.log("Received message of label " + data[0]);
+		var byteCount = data[1];
+		console.log("Message has " + byteCount + " bytes");
+		console.log("Message data: " + data.toString('utf8', 2, byteCount + 2));
 	});
 });
 
