@@ -1,6 +1,3 @@
-require('dns').lookup(require('os').hostname(), function (err, add, fam) {
-  console.log('addr: '+add);
-})
 
 const Net = require("net");
 const EventEmitter = require("events");
