@@ -1,9 +1,3 @@
-require('dns').lookup(require('os').hostname(), function (err, add, fam) {
-  console.log('addr: '+add);
-})
-
-
-
 
 
 const Net = require("net");
@@ -53,13 +47,13 @@ class Game {
 		this.player2Inv = new Array(6);
 		
 		for (var i = 0; i < 6; i++) {
-			player1Inv[i] = Math.floor(Math.random() * 6);
-			player2Inv[i] = Math.floor(Math.random() * 6);
+			this.player1Inv[i] = Math.floor(Math.random() * 6);
+			this.player2Inv[i] = Math.floor(Math.random() * 6);
 		}
 		
 		for (var x = 0; x < 6; x++) {
-			for (var y = 6; y < 6; y++) {
-				board[x][y] = Math.floor(Math.random() * 6);
+			for (var y = 0; y < 6; y++) {
+				this.board[x][y] = Math.floor(Math.random() * 6);
 			}
 		}
 		
@@ -68,53 +62,54 @@ class Game {
 	initializeBoard() {
 		var buf = newMessage(INITIALIZE_BOARD, 36);
 		
-		for (var x = 0; x < 6; x++) {
-			for (var y = 6; y < 6; y++) {
-				buf.writeInt8(board[x][y], ((y * 6) + x) + 2);
+		for (var y = 0; y < 6; y++) {
+			for (var x = 0; x < 6; x++) {
+				buf.writeInt8(this.board[x][y], ((y * 6) + x) + 2);
+				console.log(y * 6 + x + 2);
 			}
 		}
 		
-		player1.write(buf);
-		//player2.write(buf);
+		this.player1.write(buf);
+		//this.player2.write(buf);
 	}
 	
 	moveBoardItem(x1, y1, x2, y2) {
 		var buf = newMessage(MOVE_BOARD_ITEM, 4);
 		
-		board[x2][y2] = board[x1][y1];
-		board[x1][y1] = null;
+		this.board[x2][y2] = board[x1][y1];
+		this.board[x1][y1] = null;
 		
-		buf.write(x1, 3);
-		buf.write(y1, 4);
-		buf.write(x2, 5);
-		buf.write(y2, 6);
+		buf.writeInt8(x1, 3);
+		buf.writeInt8(y1, 4);
+		buf.writeInt8(x2, 5);
+		buf.writeInt8(y2, 6);
 		
-		player1.write(buf);
-		player2.write(buf);
+		this.player1.write(buf);
+		this.player2.write(buf);
 	}
 	
 	deleteInvItem(slot, player) {
 		var buf1 = newMessage(DELETE_INV_ITEM, 2);
 		var buf2 = newMessage(DELETE_INV_ITEM, 2);
 		
-		buf1.write(slot, 2);
-		buf2.write(slot, 2);
+		buf1.writeInt8(slot, 2);
+		buf2.writeInt8(slot, 2);
 		
-		if (player == player1) {
-			player1Inv[slot] = null;
+		if (player == this.player1) {
+			this.player1Inv[slot] = null;
 			
-			buf1.write(0, 3);
-			buf2.write(1, 3);
+			buf1.writeInt8(0, 3);
+			buf2.writeInt8(1, 3);
 			
 		} else {
-			player2Inv[slot] = null;
+			this.player2Inv[slot] = null;
 			
-			buf2.write(0, 3);
-			buf1.write(1, 3);
+			buf2.writeInt8(0, 3);
+			buf1.writeInt8(1, 3);
 		}
 		
-		player1.write(buf1);
-		player2.write(buf2);
+		this.player1.write(buf1);
+		this.player2.write(buf2);
 		
 		
 	}
@@ -123,27 +118,27 @@ class Game {
 		var buf1 = newMessage(CREATE_BOARD_ITEM, 4);
 		var buf2 = newMessage(CREATE_BOARD_ITEM, 4);
 		
-		board[x][y] = itemID;
+		this.board[x][y] = itemID;
 		
-		buf1.write(x, 2);
-		buf1.write(y, 3);
-		buf1.write(itemID, 4);
+		buf1.writeInt8(x, 2);
+		buf1.writeInt8(y, 3);
+		buf1.writeInt8(itemID, 4);
 		
-		buf2.write(x, 2);
-		buf2.write(y, 3);
-		buf2.write(itemID, 4);
+		buf2.writeInt8(x, 2);
+		buf2.writeInt8(y, 3);
+		buf2.writeInt8(itemID, 4);
 		
-		if (player1 == player) {
-			buf1.write(0, 5);
-			buf2.write(1, 5);
+		if (this.player1 == player) {
+			buf1.writeInt8(0, 5);
+			buf2.writeInt8(1, 5);
 		} else {
 			buf2.write(0, 5);
 			buf1.write(1, 5);
 			
 		}
 		
-		player1.write(buf1);
-		player2.write(buf2);
+		this.player1.write(buf1);
+		this.player2.write(buf2);
 		
 	}
 	
@@ -151,40 +146,40 @@ class Game {
 		var buf1 = newMessage(MOVE_INV_ITEM_TO_BOARD, 4);
 		var buf2 = newMessage(MOVE_INV_ITEM_TO_BOARD, 4);
 		
-		board[x][y] = itemID;
+		this.board[x][y] = itemID;
 		
-		buf1.write(slot, 2);
-		buf1.write(x, 3);
-		buf1.write(y, 4);
+		buf1.writeInt8(slot, 2);
+		buf1.writeInt8(x, 3);
+		buf1.writeInt8(y, 4);
 		
-		buf2.write(slot, 2);
-		buf2.write(x, 3);
-		buf2.write(y, 4);
+		buf2.writeInt8(slot, 2);
+		buf2.writeInt8(x, 3);
+		buf2.writeInt8(y, 4);
 		
-		if (player1 == player) {
-			buf1.write(0, 5);
-			buf2.write(1, 5);
+		if (this.player1 == player) {
+			buf1.writeInt8(0, 5);
+			buf2.writeInt8(1, 5);
 		} else {
-			buf2.write(0, 5);
-			buf1.write(1, 5);
+			buf2.writeInt8(0, 5);
+			buf1.writeInt8(1, 5);
 			
 		}
 		
-		player1.write(buf1);
-		player2.write(buf2);
+		this.player1.write(buf1);
+		this.player2.write(buf2);
 		
 	}
 	
 	deleteBoardItem(x, y) {
 		var buf = newMessage(DELETE_BOARD_ITEM, 2);
 		
-		board[x][y] = null;
+		this.board[x][y] = null;
 		
-		buf.write(x, 3);
-		buf.write(y, 4);
+		buf.writeInt8(x, 3);
+		buf.writeInt8(y, 4);
 
-		player1.write(buf);
-		player2.write(buf);
+		this.player1.write(buf);
+		this.player2.write(buf);
 	}
 	
 	initializeInv(x, y) {
@@ -192,44 +187,44 @@ class Game {
 		var buf2 = newMessage(INITIALIZE_INV, 12);
 		
 		for (var i = 0; i < 6; i++) {
-			buf1.write(player1Inv[i], i);
-			buf1.write(player2Inv[i], 6 + i);
+			buf1.writeInt8(this.player1Inv[i], i);
+			buf1.writeInt8(this.player2Inv[i], 6 + i);
 			
-			buf2.write(player2Inv[i], i);
-			buf2.write(player1Inv[i], 6 + i);
+			buf2.writeInt8(this.player2Inv[i], i);
+			buf2.writeInt8(this.player1Inv[i], 6 + i);
 		}
 		
-		player1.write(buf1);
-		player2.write(buf2);
+		this.player1.write(buf1);
+		this.player2.write(buf2);
 	}
 	
 	createInvItem(slot, itemID, player) {
 		var buf1 = newMessage(CREATE_INV_ITEM, 3);
 		var buf2 = newMessage(CREATE_INV_ITEM, 3);
 		
-		buf1.write(slot, 2);
-		buf2.write(slot, 2);
+		buf1.writeInt8(slot, 2);
+		buf2.writeInt8(slot, 2);
 		
-		if (player == player1) {
-			player1Inv[slot] = null;
+		if (player == this.player1) {
+			this.player1Inv[slot] = null;
 			
-			buf1.write(0, 3);
-			buf2.write(1, 3);
+			buf1.writeInt8(0, 3);
+			buf2.writeInt8(1, 3);
 			
 		} else {
-			player2Inv[slot] = null;
+			this.player2Inv[slot] = null;
 			
-			buf2.write(0, 3);
-			buf1.write(1, 3);
+			buf2.writeInt8(0, 3);
+			buf1.writeInt8(1, 3);
 		}
 		
-		player1.write(buf1);
-		player2.write(buf2);
+		this.player1.write(buf1);
+		this.player2.write(buf2);
 		
 	}
 	
 	otherPlayer(player) {
-		return player1 == player ? player2 : player1;
+		return this.player1 == player ? this.player2 : this.player1;
 	}
 	
 	
@@ -262,7 +257,7 @@ var server = Net.createServer(function (socket) {
 	socket.write(buf);
 	*/
 	
-	new Game(player, null).initializeBoard();
+	new Game(socket, null).initializeBoard();
 	
 	socket.on("data", function(msg) {
 		
