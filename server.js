@@ -25,9 +25,10 @@ const CREATE_INV_ITEM = 			23; // 3 bytes: slot index, item id, 0=thisPlayer or 
 const MOVE_ITEM_FAILED = 			24; // 2 bytes: x, y
 const OPPONENTS_NAME =				25; // string
 const GAME_ENDED = 					26; // 1 byte: 0 = opponent left, 1 = this player won, 2 = other player won
-const SET_LOOT = 					27; // 3 bytes, 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
-const SET_HEALTH = 					28; // 3 bytes, 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
-const SET_DEFENSE = 				29; // 3 bytes, 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
+const SET_LOOT = 					27; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
+const SET_HEALTH = 					28; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
+const SET_DEFENSE = 				29; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
+const SET_TURN = 					30;	// 1 byte: 0=thisPlayer or 1=otherPlayer
 
 var lookingForGame = null;
 
@@ -38,6 +39,9 @@ function newMessage(label, dataLen) {
 	return buf;
 }
 
+function position(x, y) {
+	return {'x': x, 'y': y};
+}
 
 // game properties
 const INIT_LOOT = 0;
@@ -70,18 +74,17 @@ class Game {
 			}
 		}
 		
-		this.player1.health = INIT_HEALTH;
-		this.player2.health = INIT_HEALTH;
+		this.setHealth(this.player1, INIT_HEALTH);
+		this.setHealth(this.player2, INIT_HEALTH);
+		this.setDefense(this.player1, INIT_DEFENSE);
+		this.setDefense(this.player2, INIT_DEFENSE);
+		this.setLoot(this.player1, INIT_LOOT);
+		this.setLoot(this.player2, INIT_LOOT);
 		
-		this.player1.defense = INIT_DEFENSE;
-		this.player2.defense = INIT_DEFENSE;
-		
-		this.player1.loot = INIT_LOOT;
-		this.player2.loot = INIT_LOOT;
-		
-		this.opponentsName();
+		this.giveOpponentsName();
 		this.initializeBoard();
-		this.updateAllPlayerProperties();
+		
+		this.setTurn(Math.random() > 0.5 ? this.player1 : this.player2);
 		
 	}
 	
@@ -257,7 +260,7 @@ class Game {
 		player.write(buf);
 	}
 	
-	opponentsName() {
+	giveOpponentsName() {
 		var buf1 = newMessage(OPPONENTS_NAME, this.player1.name.length);
 		var buf2 = newMessage(OPPONENTS_NAME, this.player2.name.length);
 		
@@ -298,7 +301,9 @@ class Game {
 		}
 	}
 	
-	updateLoot(player) {
+	setLoot(player, value) {
+		player.loot = value;
+		
 		var buf1 = newMessage(SET_LOOT, 3);
 		var buf2 = newMessage(SET_LOOT, 3);
 		
@@ -317,7 +322,9 @@ class Game {
 		this.player2.write(buf2);
 	}
 	
-	updateHealth(player) {
+	setHealth(player, value) {
+		player.health = value;
+		
 		var buf1 = newMessage(SET_HEALTH, 3);
 		var buf2 = newMessage(SET_HEALTH, 3);
 		
@@ -336,7 +343,9 @@ class Game {
 		this.player2.write(buf2);
 	}
 	
-	updateDefense(player) {
+	setDefense(player, value) {
+		player.defense = value;
+		
 		var buf1 = newMessage(SET_DEFENSE, 3);
 		var buf2 = newMessage(SET_DEFENSE, 3);
 		
@@ -355,22 +364,99 @@ class Game {
 		this.player2.write(buf2);
 	}
 	
-	updateAllPlayerProperties() {
-		this.updateDefense(this.player1);
-		this.updateHealth(this.player1);
-		this.updateLoot(this.player1);
-		this.updateDefense(player2);
-		this.updateHealth(player2);
-		this.updateLoot(player2);
+	setTurn(player) {
+		this.turn = player;
+		
+		var buf1 = newMessage(SET_TURN, 1);
+		var buf2 = newMessage(SET_TURN, 1);
+		
+		if (player == this.player1) {
+			buf1.writeInt8(0, 2);
+			buf2.writeInt8(1, 2)
+		} else {
+			buf2.writeInt8(0, 2);
+			buf1.writeInt8(1, 2)
+		}
+		
+		this.player1.write(buf1);
+		this.player2.write(buf2);
 	}
 	
-	
-	
-	otherPlayer(player) {
-		return this.player1 == player ? this.player2 : this.player1;
+	tryMoveItem(x, y, player) {
+		var matches = this.checkForMatches(x, y, new Array());
+		
+		if (matches.length >= 3) {
+			
+			for (var m in matches) {
+				this.deleteBoardItem(m.x, m.y);
+			}
+			
+			this.deleteInvItem(x, player);
+			this.createInvItem(x, Math.floor(Math.random() * 6), player);
+			
+		} else {
+			
+			this.moveItemFailed(x, y, player);
+			
+		}
+		
 	}
 	
-	
+	checkForMatches(x, y, item, matches) {
+		
+		var herePos = position(x, y), test, testPos;
+		
+		if (y + 1 < 6) {
+			testPos = position(x, y + 1);
+			
+			test = this.board[testPos.x][testPos.y];
+			
+			if (test == item && !matches.contains(testPos)) {
+				arr.push(testPos);
+				this.checkForMatches(testPos.x, testPos.y, matches);
+			}
+		}
+		
+		if (x + 1 < 6) {
+			testPos = position(x + 1, y);
+			
+			test = this.board[testPos.x][testPos.y];
+			
+			if (test == item && !matches.contains(testPos)) {
+				arr.push(testPos);
+				this.checkForMatches(testPos.x, testPos.y, matches);
+			}
+		}
+		
+		if (y - 1 >= 0) {
+			testPos = position(x, y - 1);
+			
+			test = this.board[testPos.x][testPos.y];
+			
+			if (test == item && !matches.contains(testPos)) {
+				arr.push(testPos);
+				this.checkForMatches(testPos.x, testPos.y, matches);
+			}
+		}
+		
+		if (x - 1 >= 0) {
+			testPos = position(x - 1, y);
+			
+			test = this.board[testPos.x][testPos.y];
+			
+			if (test == item && !matches.contains(testPos)) {
+				arr.push(testPos);
+				this.checkForMatches(testPos.x, testPos.y, matches);
+			}
+		}
+		
+
+		if (!matches.contains(herePos)) {
+			matches.push(herePos);
+		}
+		
+		return matches;
+	}
 	
 	
 }
@@ -398,8 +484,6 @@ var server = Net.createServer(function (socket) {
 		console.log("new player: " + socket.name);
 	});
 	
-	new Game(socket, null);
-	
 	messages.on("findGame", function(data) {
 		if (lookingForGame == null) {
 			lookingForGame = socket;
@@ -415,6 +499,12 @@ var server = Net.createServer(function (socket) {
 	messages.on("leaveGame", function(data) {
 		if (socket.game != null) {
 			socket.game.playerLeft(socket);
+		}
+	});
+	
+	messages.on("tryMoveItem", function(data) {
+		if (socket.game != null) {
+			socket.game.tryMoveItem(data.readInt8(0), data.readInt8(1), socket);
 		}
 	});
 	
