@@ -394,6 +394,12 @@ class Game {
 			this.deleteInvItem(x, player);
 			this.createInvItem(x, Math.floor(Math.random() * 6), player);
 			
+			if (player == player1) {
+				fillDown();
+			} else {
+				fillUp();
+			}
+			
 		} else {
 			
 			this.moveItemFailed(x, y, player);
@@ -456,6 +462,67 @@ class Game {
 		}
 		
 		return matches;
+	}
+	
+	fillDown() {
+		
+		var ground;
+		
+		for (var x = 0; x < 6; x++) {
+			
+			ground = 0;
+			
+			for (var y = 0; y < 6; y++) {
+				
+				if (this.board[x][y] != null) {
+					
+					ground++;
+					
+					if (ground != y) {
+						this.moveBoardItem(x, y, x, ground);
+					}
+					
+				}
+				
+			}
+			
+			for (var i = ground; i < 6; i++) {
+				this.createBoardItem(x, i, Math.floor(Math.random() * 6), player1);
+			}
+			
+		}
+		
+		
+		
+		
+	}
+	
+	fillUp() {
+		
+		var ground;
+		
+		for (var x = 0; x < 6; x++) {
+			
+			ground = 5;
+			
+			for (var y = 5; y >= 0; y--) {
+				
+				if (this.board[x][y] != null) {
+					
+					ground--;
+					
+					if (ground != y) {
+						this.moveBoardItem(x, y, x, ground);
+					}
+				}
+				
+			}
+			
+			for (var i = ground; i >= 0; i--) {
+				this.createBoardItem(x, i, Math.floor(Math.random() * 6), player2);
+			}
+		}
+		
 	}
 	
 	
