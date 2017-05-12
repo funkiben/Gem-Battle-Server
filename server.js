@@ -394,11 +394,13 @@ class Game {
 			this.deleteInvItem(x, player);
 			this.createInvItem(x, Math.floor(Math.random() * 6), player);
 			
-			if (player == player1) {
-				fillDown();
+			if (player == this.player1) {
+				this.fillDown();
 			} else {
-				fillUp();
+				this.fillUp();
 			}
+			
+			this.setTurn(this.turn == this.player1 ? this.player2 : this.player1);
 			
 		} else {
 			
@@ -464,6 +466,22 @@ class Game {
 		return matches;
 	}
 	
+	anyMatches(inv) {
+		for (var x = 0; x < 6; x++) {
+			
+			for (var y = 0; y < 6; y++) {
+				
+				if (checkForMatches(x, y, inv[x], new Array())) {
+					return true;
+				}
+				
+			}
+			
+		}
+		
+		return false;
+	}
+	
 	fillDown() {
 		
 		var ground;
@@ -487,7 +505,7 @@ class Game {
 			}
 			
 			for (var i = ground; i < 6; i++) {
-				this.createBoardItem(x, i, Math.floor(Math.random() * 6), player1);
+				this.createBoardItem(x, i, Math.floor(Math.random() * 6), this.player1);
 			}
 			
 		}
@@ -519,7 +537,7 @@ class Game {
 			}
 			
 			for (var i = ground; i >= 0; i--) {
-				this.createBoardItem(x, i, Math.floor(Math.random() * 6), player2);
+				this.createBoardItem(x, i, Math.floor(Math.random() * 6), this.player2);
 			}
 		}
 		
