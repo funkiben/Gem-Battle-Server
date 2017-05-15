@@ -72,10 +72,10 @@ var server = net.createServer(function (socket) {
 		}
 	}
 	
-	messages.on("setName", onSetName);
-	messages.on("findGame", onFindGame);
-	messages.on("leaveGame", onLeaveGame);
-	messages.on("tryMoveItem", onTryMoveItem);
+	messages.event.on("setName", onSetName);
+	messages.event.on("findGame", onFindGame);
+	messages.event.on("leaveGame", onLeaveGame);
+	messages.event.on("tryMoveItem", onTryMoveItem);
 	
 	socket.on("data", function(data) {
 		messages.call(msg);
@@ -90,10 +90,10 @@ var server = net.createServer(function (socket) {
 			socket.game.playerLeft(socket);
 		}
 		
-		messages.removeListener("setName", onSetName);
-		messages.removeListener("findGame", onFindGame);
-		messages.removeListener("leaveGame", onLeaveGame);
-		messages.removeListener("tryMoveItem", onTryMoveItem);
+		messages.event.removeListener("setName", onSetName);
+		messages.event.removeListener("findGame", onFindGame);
+		messages.event.removeListener("leaveGame", onLeaveGame);
+		messages.event.removeListener("tryMoveItem", onTryMoveItem);
 		
 		console.log("client disconnected: " + socket.name);
 	});
