@@ -40,24 +40,15 @@ const INIT_DEFENSE = 10;
 var lookingForGame = null;
 
 
-
-
 var server = net.createServer(function (socket) {
 	console.log("client connected");
 	
-	
-	socket.on("data", function(msg) {
-		
-		messages.call(msg);
-		
-	});
-	
-	messages.on("setName", function(data) {
+	function onSetName(data) {
 		socket.name = data;
 		console.log("new player: " + socket.name);
-	});
+	}
 	
-	messages.on("findGame", function(data) {
+	function onFindGame(data) {
 		if (lookingForGame == null) {
 			lookingForGame = socket;
 		} else {
@@ -67,18 +58,27 @@ var server = net.createServer(function (socket) {
 			lookingForGame = null;
 			
 		}
-	});
+	}
 	
-	messages.on("leaveGame", function(data) {
+	function onLeaveGame(data) {
 		if (socket.game != null) {
 			socket.game.playerLeft(socket);
 		}
-	});
+	}
 	
-	messages.on("tryMoveItem", function(data) {
+	function onTryMoveItem(data) {
 		if (socket.game != null) {
 			socket.game.tryMoveItem(data.readInt8(0), data.readInt8(1), socket);
 		}
+	}
+	
+	messages.on("setName", onSetName);
+	messages.on("findGame", onFindGame);
+	messages.on("leaveGame", onLeaveGame);
+	messages.on("tryMoveItem", onTryMoveItem);
+	
+	socket.on("data", function(data) {
+		messages.call(msg);
 	});
 	
 	socket.on("end", function() {
@@ -89,6 +89,11 @@ var server = net.createServer(function (socket) {
 		if (socket.game != null) {
 			socket.game.playerLeft(socket);
 		}
+		
+		messages.removeListener("setName", onSetName);
+		messages.removeListener("findGame", onFindGame);
+		messages.removeListener("leaveGame", onLeaveGame);
+		messages.removeListener("tryMoveItem", onTryMoveItem);
 		
 		console.log("client disconnected: " + socket.name);
 	});
