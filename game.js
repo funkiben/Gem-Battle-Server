@@ -452,7 +452,11 @@ messages = require("./messages.js");
 		checkForMatches(x, y, item, matches) {
 		
 			var herePos = position(x, y), testPos;
-		
+			
+			if (!matches.contains(herePos)) {
+				matches.push(herePos);
+			}
+			
 			if (y + 1 < 6) {
 				testPos = position(x, y + 1);
 				this.checkIfMatch(testPos, item, matches);
@@ -473,16 +477,10 @@ messages = require("./messages.js");
 				this.checkIfMatch(testPos, item, matches);
 			}
 		
-
-			if (!matches.contains(herePos)) {
-				matches.push(herePos);
-			}
 		}
 		
 		checkIfMatch(testPos, item, matches) {
 			var test = this.board[testPos.x][testPos.y];
-		
-			console.log(item + "," + test);
 		
 			if (test == item && !matches.contains(testPos)) {
 				matches.push(testPos);
