@@ -2,8 +2,48 @@ messages = require("./messages.js");
 
 (function() {
 
+
+	// messages server sends to clients
+	const INITIALIZE_BOARD = 			16; // 36 bytes: 1 byte for each slot
+	const MOVE_BOARD_ITEM = 	 		17; // 4 bytes: xold, yold, xnew, ynew
+	const DELETE_INV_ITEM =  			18; // 2 bytes: slot index, 0=thisPlayer or 1=otherPlayer
+	const CREATE_BOARD_ITEM =  			19; // 4 bytes: x, y, item id, 0=thisPlayer or 1=otherPlayer
+	const MOVE_INV_ITEM_TO_BOARD =  	20; // 3 bytes: x, y, 0=thisPlayer or 1=otherPlayer
+	const DELETE_BOARD_ITEM	=			21; // 2 bytes: x, y
+	const INITIALIZE_INV =				22; // 12 bytes: 1 byte for each slot, first 6 are thisPlayer, last 6 are otherPlayer
+	const CREATE_INV_ITEM = 			23; // 3 bytes: slot index, item id, 0=thisPlayer or 1=otherPlayer
+	const MOVE_ITEM_FAILED = 			24; // 2 bytes: x, y
+	const OPPONENTS_NAME =				25; // string
+	const GAME_ENDED = 					26; // 1 byte: 0 = opponent left, 1 = this player won, 2 = other player won
+	const SET_LOOT = 					27; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
+	const SET_HEALTH = 					28; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
+	const SET_DEFENSE = 				29; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
+	const SET_TURN = 					30;	// 1 byte: 0=thisPlayer or 1=otherPlayer
+	const OUT_OF_MATCHES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
+	
+
+	// game properties
+	const INIT_LOOT = 0;
+	const INIT_HEALTH = 20;
+	const INIT_DEFENSE = 10;
+
+
+
 	function position(x, y) {
 		return {'x': x, 'y': y};
+	}
+	
+	class PositionArray extends Array {
+		contains(e) {
+			for (var m in this) {
+				if (this[m].x == e.x && this[m].y == e.y) {
+					return true;
+				}
+			}
+	
+			return false;
+		}
+	
 	}
 	
 	class Game {
@@ -38,6 +78,7 @@ messages = require("./messages.js");
 		
 			this.giveOpponentsName();
 			this.initializeBoard();
+			this.initializeInv();
 		
 			this.setTurn(Math.random() > 0.5 ? this.player1 : this.player2);
 		
@@ -187,18 +228,21 @@ messages = require("./messages.js");
 		
 			buf1.writeInt8(slot, 2);
 			buf2.writeInt8(slot, 2);
-		
-			if (player == this.player1) {
-				this.player1Inv[slot] = null;
 			
-				buf1.writeInt8(0, 3);
-				buf2.writeInt8(1, 3);
+			buf1.writeInt8(itemID, 3);
+			buf2.writeInt8(itemID, 3);
+			
+			if (player == this.player1) {
+				this.player1Inv[slot] = itemID;
+			
+				buf1.writeInt8(0, 4);
+				buf2.writeInt8(1, 4);
 			
 			} else {
-				this.player2Inv[slot] = null;
+				this.player2Inv[slot] = itemID;
 			
-				buf2.writeInt8(0, 3);
-				buf1.writeInt8(1, 3);
+				buf2.writeInt8(0, 4);
+				buf1.writeInt8(1, 4);
 			}
 		
 			this.player1.write(buf1);
@@ -220,7 +264,7 @@ messages = require("./messages.js");
 			var buf2 = messages.newMessage(OPPONENTS_NAME, this.player2.name.length);
 		
 			buf1.write(this.player2.name, 2, this.player2.name.length, 'utf8');
-			buf2.write(this.player1.name, 2, this,player1.name.length, 'utf8');
+			buf2.write(this.player1.name, 2, this.player1.name.length, 'utf8');
 		
 			this.player1.write(buf1);
 			this.player2.write(buf2);
@@ -354,21 +398,22 @@ messages = require("./messages.js");
 		}
 	
 		tryMoveItem(x, y, player) {
-			var matches = new Array();
+			var matches = new PositionArray();
 		
-			this.checkForMatches(x, y, matches);
-		
+			this.checkForMatches(x, y, player == this.player1 ? this.player1Inv[x] : this.player2Inv[x], matches);
+			
 			if (matches.length >= 3) {
 			
 				for (var m in matches) {
-					this.deleteBoardItem(m.x, m.y);
+					console.log(matches[m]);
+					this.deleteBoardItem(matches[m].x, matches[m].y);
 				}
 			
-				this.deleteInvItem(x, player);
-				this.createInvItem(x, Math.floor(Math.random() * 6), player);
+				//this.deleteInvItem(x, player);
+				//this.createInvItem(x, Math.floor(Math.random() * 6), player);
 			
 				if (player == this.player1) {
-					this.fillDown();
+					//this.fillDown();
 				
 					if (this.anyMatches(this.player2Inv)) {
 						this.setTurn(this.player2);
@@ -377,7 +422,7 @@ messages = require("./messages.js");
 					}
 				
 				} else {
-					this.fillUp();
+					//this.fillUp();
 				
 					if (this.anyMatches(this.player1Inv)) {
 						this.setTurn(this.player1);
@@ -407,8 +452,8 @@ messages = require("./messages.js");
 				test = this.board[testPos.x][testPos.y];
 			
 				if (test == item && !matches.contains(testPos)) {
-					arr.push(testPos);
-					this.checkForMatches(testPos.x, testPos.y, matches);
+					matches.push(testPos);
+					this.checkForMatches(testPos.x, testPos.y, item, matches);
 				}
 			}
 		
@@ -418,8 +463,8 @@ messages = require("./messages.js");
 				test = this.board[testPos.x][testPos.y];
 			
 				if (test == item && !matches.contains(testPos)) {
-					arr.push(testPos);
-					this.checkForMatches(testPos.x, testPos.y, matches);
+					matches.push(testPos);
+					this.checkForMatches(testPos.x, testPos.y, item, matches);
 				}
 			}
 		
@@ -429,8 +474,8 @@ messages = require("./messages.js");
 				test = this.board[testPos.x][testPos.y];
 			
 				if (test == item && !matches.contains(testPos)) {
-					arr.push(testPos);
-					this.checkForMatches(testPos.x, testPos.y, matches);
+					matches.push(testPos);
+					this.checkForMatches(testPos.x, testPos.y, item, matches);
 				}
 			}
 		
@@ -440,8 +485,8 @@ messages = require("./messages.js");
 				test = this.board[testPos.x][testPos.y];
 			
 				if (test == item && !matches.contains(testPos)) {
-					arr.push(testPos);
-					this.checkForMatches(testPos.x, testPos.y, matches);
+					matches.push(testPos);
+					this.checkForMatches(testPos.x, testPos.y, item, matches);
 				}
 			}
 		
@@ -450,16 +495,16 @@ messages = require("./messages.js");
 				matches.push(herePos);
 			}
 		}
-	
+		
 		anyMatches(inv) {
-			var matches = new Array();
+			var matches;
 		
 			for (var x = 0; x < 6; x++) {
 			
 				for (var y = 0; y < 6; y++) {
 				
-					matches.clear();
-					checkForMatches(x, y, inv[x], matches);
+					matches = new PositionArray();
+					this.checkForMatches(x, y, inv[x], matches);
 				
 					if (matches.length >= 3) {
 						return true;

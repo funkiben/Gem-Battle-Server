@@ -13,16 +13,13 @@ const EventEmitter = require("events");
 	
 	module.exports.labelRegistry = {};
 	
-	var event = module.exports.event;
-	var labelRegistry = module.exports.labelRegistry;
-	
 	module.exports.call = function(msg) {
 		var byteCount = msg[1];
 		var data = msg.slice(2);
-		var label = labelRegistry[msg[0]];
+		var label = module.exports.labelRegistry[msg[0]];
 		
 		if (label != null) {
-			event.emit(label, data);
+			module.exports.event.emit(label, data);
 		} else {
 			console.log("Received unknown label: " + msg[0]);
 		}
