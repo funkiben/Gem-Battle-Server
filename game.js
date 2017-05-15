@@ -285,7 +285,10 @@ messages = require("./messages.js");
 		
 			this.player1.write(buf1);
 			this.player2.write(buf2);
-		
+			
+			this.player1.game = null;
+			this.player2.game = null;
+			
 		}
 	
 		playerLeft(player) {
@@ -298,6 +301,9 @@ messages = require("./messages.js");
 			} else {
 				this.player1.write(buf);
 			}
+			
+			this.player1.game = null;
+			this.player2.game = null;
 		}
 	
 		setLoot(player, value) {
@@ -403,7 +409,8 @@ messages = require("./messages.js");
 			this.checkForMatches(x, y, player == this.player1 ? this.player1Inv[x] : this.player2Inv[x], matches);
 			
 			if (matches.length >= 3) {
-			
+				
+				console.log("matches:");
 				for (var m in matches) {
 					console.log(matches[m]);
 					this.deleteBoardItem(matches[m].x, matches[m].y);
@@ -444,55 +451,42 @@ messages = require("./messages.js");
 	
 		checkForMatches(x, y, item, matches) {
 		
-			var herePos = position(x, y), test, testPos;
+			var herePos = position(x, y), testPos;
 		
 			if (y + 1 < 6) {
 				testPos = position(x, y + 1);
-			
-				test = this.board[testPos.x][testPos.y];
-			
-				if (test == item && !matches.contains(testPos)) {
-					matches.push(testPos);
-					this.checkForMatches(testPos.x, testPos.y, item, matches);
-				}
+				this.checkIfMatch(testPos, item, matches);
 			}
 		
 			if (x + 1 < 6) {
 				testPos = position(x + 1, y);
-			
-				test = this.board[testPos.x][testPos.y];
-			
-				if (test == item && !matches.contains(testPos)) {
-					matches.push(testPos);
-					this.checkForMatches(testPos.x, testPos.y, item, matches);
-				}
+				this.checkIfMatch(testPos, item, matches);
 			}
 		
 			if (y - 1 >= 0) {
 				testPos = position(x, y - 1);
-			
-				test = this.board[testPos.x][testPos.y];
-			
-				if (test == item && !matches.contains(testPos)) {
-					matches.push(testPos);
-					this.checkForMatches(testPos.x, testPos.y, item, matches);
-				}
+				this.checkIfMatch(testPos, item, matches);
 			}
 		
 			if (x - 1 >= 0) {
 				testPos = position(x - 1, y);
-			
-				test = this.board[testPos.x][testPos.y];
-			
-				if (test == item && !matches.contains(testPos)) {
-					matches.push(testPos);
-					this.checkForMatches(testPos.x, testPos.y, item, matches);
-				}
+				this.checkIfMatch(testPos, item, matches);
 			}
 		
 
 			if (!matches.contains(herePos)) {
 				matches.push(herePos);
+			}
+		}
+		
+		checkIfMatch(testPos, item, matches) {
+			var test = this.board[testPos.x][testPos.y];
+		
+			console.log(item + "," + test);
+		
+			if (test == item && !matches.contains(testPos)) {
+				matches.push(testPos);
+				this.checkForMatches(testPos.x, testPos.y, item, matches);
 			}
 		}
 		
