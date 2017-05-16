@@ -1,4 +1,5 @@
 messages = require("./messages.js");
+EventEmitter = require("events");
 
 (function() {
 
@@ -46,11 +47,12 @@ messages = require("./messages.js");
 	
 	}
 	
-	class Game {
+	class Match3Game {
 		constructor(player1, player2) {
 			this.player1 = player1;
 			this.player2 = player2;
-		
+			this.events = new EventEmitter();
+			
 			this.board = new Array(6);
 		
 			this.player1Inv = new Array(6);
@@ -594,6 +596,6 @@ messages = require("./messages.js");
 	
 	}
 	
-	module.exports = Game;
+	module.exports = Match3Game;
 	
 }());
