@@ -2,7 +2,7 @@
 const net = require("net");
 const EventEmitter = require("events");
 const messages = require("./messages");
-const Match3Game = require("./match3Game");
+const GemBattleGame = require("./gemBattleGame");
 
 // messages server received from clients
 messages.labelRegistry = {
@@ -11,7 +11,6 @@ messages.labelRegistry = {
 	3:'leaveGame',
 	4:'tryMoveItem'
 };
-
 
 var lookingForGame = null;
 
@@ -23,6 +22,9 @@ var server = net.createServer(function (socket) {
 	
 	socket.messages = new EventEmitter();
 	
+	socket.on("data", function(data) {
+		messages.call(socket.messages, data);
+	});
 	
 	socket.messages.on("setName", function onSetName(data) {
 		socket.name = data;
@@ -34,7 +36,7 @@ var server = net.createServer(function (socket) {
 			lookingForGame = socket;
 		} else {
 			
-			socket.game = lookingForGame.game = new Match3Game(socket, lookingForGame, 6, 6);
+			socket.game = lookingForGame.game = new GemBattleGame(socket, lookingForGame, 6, 6);
 			
 			console.log("created new game with " + socket.name + " and " + lookingForGame.name);
 			
@@ -44,36 +46,16 @@ var server = net.createServer(function (socket) {
 		}
 	});
 	
-	socket.messages.on("leaveGame", function onLeaveGame(data) {
-		if (socket.game != null) {
-			socket.game.playerLeft(socket);
-		}
-	});
-	
-	socket.messages.on("tryMoveItem", function onTryMoveItem(data) {
-		if (socket.game != null) {
-			socket.game.tryMoveItem(data.readInt8(0), data.readInt8(1), socket);
-		}
-	});
-	
-	socket.on("data", function(data) {
-		messages.call(socket.messages, data);
-	});
-	
 	socket.on("end", function() {
 		if (lookingForGame == socket) {
 			lookingForGame = null;
-		}
-		
-		if (socket.game != null) {
-			socket.game.playerLeft(socket);
 		}
 		
 		console.log("client disconnected: " + socket.name);
 	});
 	
 	
-	socket.messages.emit("findGame", null);
+	socket.messages.emit("findGame", null); // TEMP
 	
 });
 
