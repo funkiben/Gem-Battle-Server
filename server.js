@@ -21,12 +21,15 @@ var server = net.createServer(function (socket) {
 	
 	socket.name = "no name";
 	
-	function onSetName(data) {
+	var messageEvents = new EventEmitter();
+	
+	
+	messageEvents.on("setName", function onSetName(data) {
 		socket.name = data;
 		console.log("new player: " + socket.name);
-	}
+	});
 	
-	function onFindGame(data) {
+	messageEvents.on("findGame", function onFindGame(data) {
 		if (lookingForGame == null) {
 			lookingForGame = socket;
 		} else {
@@ -39,28 +42,22 @@ var server = net.createServer(function (socket) {
 			
 			
 		}
-	}
+	});
 	
-	
-	function onLeaveGame(data) {
+	messageEvents.on("leaveGame", function onLeaveGame(data) {
 		if (socket.game != null) {
 			socket.game.playerLeft(socket);
 		}
-	}
+	});
 	
-	function onTryMoveItem(data) {
+	messageEvents.on("tryMoveItem", function onTryMoveItem(data) {
 		if (socket.game != null) {
 			socket.game.tryMoveItem(data.readInt8(0), data.readInt8(1), socket);
 		}
-	}
-	
-	messages.event.on("setName", onSetName);
-	messages.event.on("findGame", onFindGame);
-	messages.event.on("leaveGame", onLeaveGame);
-	messages.event.on("tryMoveItem", onTryMoveItem);
+	});
 	
 	socket.on("data", function(data) {
-		messages.call(data);
+		messages.call(messageEvents, data);
 	});
 	
 	socket.on("end", function() {
@@ -73,17 +70,11 @@ var server = net.createServer(function (socket) {
 			socket.game = null;
 		}
 		
-		messages.event.removeListener("setName", onSetName);
-		messages.event.removeListener("findGame", onFindGame);
-		messages.event.removeListener("leaveGame", onLeaveGame);
-		messages.event.removeListener("tryMoveItem", onTryMoveItem);
-		
 		console.log("client disconnected: " + socket.name);
 	});
 	
 	
-	onFindGame(null);
-	
+	messageEvents.emit("findGame", null);
 	
 });
 

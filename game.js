@@ -98,6 +98,7 @@ messages = require("./messages.js");
 		}
 	
 		moveBoardItem(x1, y1, x2, y2) {
+
 			var buf = messages.newMessage(MOVE_BOARD_ITEM, 4);
 		
 			this.board[x2][y2] = this.board[x1][y1];
@@ -110,6 +111,7 @@ messages = require("./messages.js");
 		
 			this.player1.write(buf);
 			this.player2.write(buf);
+			
 		}
 	
 		deleteInvItem(slot, player) {
@@ -156,8 +158,8 @@ messages = require("./messages.js");
 				buf1.writeInt8(0, 5);
 				buf2.writeInt8(1, 5);
 			} else {
-				buf2.write(0, 5);
-				buf1.write(1, 5);
+				buf2.writeInt8(0, 5);
+				buf1.writeInt8(1, 5);
 			
 			}
 		
@@ -405,22 +407,20 @@ messages = require("./messages.js");
 	
 		tryMoveItem(x, y, player) {
 			var matches = new PositionArray();
-		
+			
 			this.checkForMatches(x, y, player == this.player1 ? this.player1Inv[x] : this.player2Inv[x], matches);
 			
 			if (matches.length >= 3) {
 				
-				console.log("matches:");
 				for (var m in matches) {
-					console.log(matches[m]);
 					this.deleteBoardItem(matches[m].x, matches[m].y);
 				}
 			
-				//this.deleteInvItem(x, player);
-				//this.createInvItem(x, Math.floor(Math.random() * 6), player);
+				this.deleteInvItem(x, player);
+				this.createInvItem(x, Math.floor(Math.random() * 6), player);
 			
 				if (player == this.player1) {
-					//this.fillDown();
+					this.fillDown();
 				
 					if (this.anyMatches(this.player2Inv)) {
 						this.setTurn(this.player2);
@@ -429,8 +429,8 @@ messages = require("./messages.js");
 					}
 				
 				} else {
-					//this.fillUp();
-				
+					this.fillUp();
+					
 					if (this.anyMatches(this.player1Inv)) {
 						this.setTurn(this.player1);
 					} else {
@@ -438,9 +438,7 @@ messages = require("./messages.js");
 					}
 				
 				}
-			
-				this.setTurn(this.turn == this.player1 ? this.player2 : this.player1);
-			
+				
 			} else {
 			
 				this.moveItemFailed(x, y, player);
@@ -482,10 +480,11 @@ messages = require("./messages.js");
 		checkIfMatch(testPos, item, matches) {
 			var test = this.board[testPos.x][testPos.y];
 		
-			if (test == item && !matches.contains(testPos)) {
+			if (test === item && !matches.contains(testPos)) {
 				matches.push(testPos);
 				this.checkForMatches(testPos.x, testPos.y, item, matches);
 			}
+			
 		}
 		
 		anyMatches(inv) {
@@ -521,11 +520,11 @@ messages = require("./messages.js");
 				
 					if (this.board[x][y] != null) {
 					
-						ground++;
-					
 						if (ground != y) {
 							this.moveBoardItem(x, y, x, ground);
 						}
+						
+						ground++;
 					
 					}
 				
@@ -536,10 +535,7 @@ messages = require("./messages.js");
 				}
 			
 			}
-		
-		
-		
-		
+			
 		}
 	
 		fillUp() {
@@ -554,11 +550,12 @@ messages = require("./messages.js");
 				
 					if (this.board[x][y] != null) {
 					
-						ground--;
-					
 						if (ground != y) {
 							this.moveBoardItem(x, y, x, ground);
 						}
+						
+						ground--;
+						
 					}
 				
 				}

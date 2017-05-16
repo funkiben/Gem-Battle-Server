@@ -2,8 +2,6 @@ const EventEmitter = require("events");
 
 (function() {
 	
-	module.exports.event = new EventEmitter();
-	
 	module.exports.newMessage = function(label, dataLen) {
 		var buf = Buffer.allocUnsafe(2 + dataLen);
 		buf.writeInt8(label, 0);
@@ -13,13 +11,13 @@ const EventEmitter = require("events");
 	
 	module.exports.labelRegistry = {};
 	
-	module.exports.call = function(msg) {
+	module.exports.call = function(eventEmitter, msg) {
 		var byteCount = msg[1];
 		var data = msg.slice(2);
 		var label = module.exports.labelRegistry[msg[0]];
 		
 		if (label != null) {
-			module.exports.event.emit(label, data);
+			eventEmitter.emit(label, data);
 		} else {
 			console.log("Received unknown label: " + msg[0]);
 		}
