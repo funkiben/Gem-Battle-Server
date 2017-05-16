@@ -85,33 +85,43 @@ messages = require("./messages.js");
 		}
 	
 		initializeBoard() {
-			var buf = messages.newMessage(INITIALIZE_BOARD, 36);
+			var nx, ny;
+			
+			var buf1 = messages.newMessage(INITIALIZE_BOARD, 36);
+			var buf2 = messages.newMessage(INITIALIZE_BOARD, 36);
 		
 			for (var y = 0; y < 6; y++) {
 				for (var x = 0; x < 6; x++) {
-					buf.writeInt8(this.board[x][y], ((y * 6) + x) + 2);
+					buf1.writeInt8(this.board[x][y], ((y * 6) + x) + 2);
+					
+					buf2.writeInt8(this.board[5 - x][5 - y], ((y * 6) + x) + 2);
 				}
 			}
 		
-			this.player1.write(buf);
-			this.player2.write(buf);
+			this.player1.write(buf1);
+			this.player2.write(buf2);
+			
 		}
 	
 		moveBoardItem(x1, y1, x2, y2) {
-
-			var buf = messages.newMessage(MOVE_BOARD_ITEM, 4);
+			var buf1 = messages.newMessage(MOVE_BOARD_ITEM, 4);
+			var buf2 = messages.newMessage(MOVE_BOARD_ITEM, 4);
 		
 			this.board[x2][y2] = this.board[x1][y1];
 			this.board[x1][y1] = null;
 		
-			buf.writeInt8(x1, 2);
-			buf.writeInt8(y1, 3);
-			buf.writeInt8(x2, 4);
-			buf.writeInt8(y2, 5);
-		
-			this.player1.write(buf);
-			this.player2.write(buf);
+			buf1.writeInt8(x1, 2);
+			buf1.writeInt8(y1, 3);
+			buf1.writeInt8(x2, 4);
+			buf1.writeInt8(y2, 5);
 			
+			buf2.writeInt8(5 - x1, 2);
+			buf2.writeInt8(5 - y1, 3);
+			buf2.writeInt8(5 - x2, 4);
+			buf2.writeInt8(5 - y2, 5);
+			
+			this.player1.write(buf1);
+			this.player2.write(buf2);
 		}
 	
 		deleteInvItem(slot, player) {
@@ -119,7 +129,7 @@ messages = require("./messages.js");
 			var buf2 = messages.newMessage(DELETE_INV_ITEM, 2);
 		
 			buf1.writeInt8(slot, 2);
-			buf2.writeInt8(slot, 2);
+			buf2.writeInt8(5 - slot, 2);
 		
 			if (player == this.player1) {
 				this.player1Inv[slot] = null;
@@ -150,8 +160,8 @@ messages = require("./messages.js");
 			buf1.writeInt8(y, 3);
 			buf1.writeInt8(itemID, 4);
 		
-			buf2.writeInt8(x, 2);
-			buf2.writeInt8(y, 3);
+			buf2.writeInt8(5 - x, 2);
+			buf2.writeInt8(5 - y, 3);
 			buf2.writeInt8(itemID, 4);
 		
 			if (this.player1 == player) {
@@ -168,27 +178,22 @@ messages = require("./messages.js");
 		
 		}
 	
-		moveInvItemToBoard(slot, x, y, player) {
-			var buf1 = messages.newMessage(MOVE_INV_ITEM_TO_BOARD, 4);
-			var buf2 = messages.newMessage(MOVE_INV_ITEM_TO_BOARD, 4);
+		moveInvItemToBoard(x, y, player) {
+			var buf1 = messages.newMessage(MOVE_INV_ITEM_TO_BOARD, 3);
+			var buf2 = messages.newMessage(MOVE_INV_ITEM_TO_BOARD, 3);
+			
+			buf1.writeInt8(x, 2);
+			buf1.writeInt8(y, 3);
 		
-			this.board[x][y] = itemID;
-		
-			buf1.writeInt8(slot, 2);
-			buf1.writeInt8(x, 3);
-			buf1.writeInt8(y, 4);
-		
-			buf2.writeInt8(slot, 2);
-			buf2.writeInt8(x, 3);
-			buf2.writeInt8(y, 4);
+			buf2.writeInt8(5 - x, 2);
+			buf2.writeInt8(5 - y, 3);
 		
 			if (this.player1 == player) {
-				buf1.writeInt8(0, 5);
-				buf2.writeInt8(1, 5);
+				buf1.writeInt8(0, 4);
+				buf2.writeInt8(1, 4);
 			} else {
-				buf2.writeInt8(0, 5);
-				buf1.writeInt8(1, 5);
-			
+				buf2.writeInt8(0, 4);
+				buf1.writeInt8(1, 4);
 			}
 		
 			this.player1.write(buf1);
@@ -197,15 +202,18 @@ messages = require("./messages.js");
 		}
 	
 		deleteBoardItem(x, y) {
-			var buf = messages.newMessage(DELETE_BOARD_ITEM, 2);
+			var buf1 = messages.newMessage(DELETE_BOARD_ITEM, 2);
+			var buf2 = messages.newMessage(DELETE_BOARD_ITEM, 2);
 		
 			this.board[x][y] = null;
 		
-			buf.writeInt8(x, 2);
-			buf.writeInt8(y, 3);
+			buf1.writeInt8(x, 2);
+			buf1.writeInt8(y, 3);
+			buf2.writeInt8(5 - x, 2);
+			buf2.writeInt8(5 - y, 3);
 
-			this.player1.write(buf);
-			this.player2.write(buf);
+			this.player1.write(buf1);
+			this.player2.write(buf2);
 		}
 	
 		initializeInv(x, y) {
@@ -216,8 +224,8 @@ messages = require("./messages.js");
 				buf1.writeInt8(this.player1Inv[i], 2 + i);
 				buf1.writeInt8(this.player2Inv[i], 8 + i);
 			
-				buf2.writeInt8(this.player2Inv[i], 2 + i);
-				buf2.writeInt8(this.player1Inv[i], 8 + i);
+				buf2.writeInt8(this.player2Inv[i], 2 + (5 - i));
+				buf2.writeInt8(this.player1Inv[i], 8 + (5 - i));
 			}
 		
 			this.player1.write(buf1);
@@ -229,7 +237,7 @@ messages = require("./messages.js");
 			var buf2 = messages.newMessage(CREATE_INV_ITEM, 3);
 		
 			buf1.writeInt8(slot, 2);
-			buf2.writeInt8(slot, 2);
+			buf2.writeInt8(5 - slot, 2);
 			
 			buf1.writeInt8(itemID, 3);
 			buf2.writeInt8(itemID, 3);
@@ -254,9 +262,14 @@ messages = require("./messages.js");
 	
 		moveItemFailed(x, y, player) {
 			var buf = messages.newMessage(MOVE_ITEM_FAILED, 2);
-		
-			buf.writeInt8(x, 2);
-			buf.writeInt8(y, 3);
+			
+			if (player == this.player1) {
+				buf.writeInt8(x, 2);
+				buf.writeInt8(y, 3);
+			} else {
+				buf.writeInt8(5 - x, 2);
+				buf.writeInt8(5 - y, 3);
+			}
 		
 			player.write(buf);
 		}
@@ -406,11 +419,18 @@ messages = require("./messages.js");
 		}
 	
 		tryMoveItem(x, y, player) {
+			if (player == this.player2) {
+				x = 5 - x;
+				y = 5 - y;
+			}
+			
 			var matches = new PositionArray();
 			
 			this.checkForMatches(x, y, player == this.player1 ? this.player1Inv[x] : this.player2Inv[x], matches);
 			
 			if (matches.length >= 3) {
+				
+				this.moveInvItemToBoard(x, y, player);
 				
 				for (var m in matches) {
 					this.deleteBoardItem(matches[m].x, matches[m].y);
