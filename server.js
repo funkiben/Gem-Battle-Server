@@ -34,7 +34,7 @@ var server = net.createServer(function (socket) {
 			lookingForGame = socket;
 		} else {
 			
-			socket.game = lookingForGame.game = new Match3Game(socket, lookingForGame);
+			socket.game = lookingForGame.game = new Match3Game(socket, lookingForGame, 6, 6);
 			
 			console.log("created new game with " + socket.name + " and " + lookingForGame.name);
 			

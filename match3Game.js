@@ -22,12 +22,10 @@ EventEmitter = require("events");
 	const SET_TURN = 					30;	// 1 byte: 0=thisPlayer or 1=otherPlayer
 	const OUT_OF_MATCHES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
 	
-
 	// game properties
 	const INIT_LOOT = 0;
 	const INIT_HEALTH = 20;
 	const INIT_DEFENSE = 10;
-
 
 
 	function position(x, y) {
@@ -48,26 +46,29 @@ EventEmitter = require("events");
 	}
 	
 	class Match3Game {
-		constructor(player1, player2) {
+		constructor(player1, player2, width, height) {
 			this.player1 = player1;
 			this.player2 = player2;
 			this.events = new EventEmitter();
 			
-			this.board = new Array(6);
+			this.width = width;
+			this.height = height;
+			
+			this.board = new Array(this.width);
 		
-			this.player1Inv = new Array(6);
-			this.player2Inv = new Array(6);
+			this.player1Inv = new Array(this.width);
+			this.player2Inv = new Array(this.width);
 		
 			for (var i = 0; i < 6; i++) {
-				this.player1Inv[i] = Math.floor(Math.random() * 6);
-				this.player2Inv[i] = Math.floor(Math.random() * 6);
-			
-				this.board[i] = new Array(6);
+				this.player1Inv[i] = this.randomItem();
+				this.player2Inv[i] = this.randomItem();
+				
+				this.board[i] = new Array(this.height);
 			}
 		
-			for (var x = 0; x < 6; x++) {
-				for (var y = 0; y < 6; y++) {
-					this.board[x][y] = Math.floor(Math.random() * 6);
+			for (var x = 0; x < this.width; x++) {
+				for (var y = 0; y < this.height; y++) {
+					this.board[x][y] = this.randomItem();
 				}
 			}
 		
@@ -85,18 +86,22 @@ EventEmitter = require("events");
 			this.setTurn(Math.random() > 0.5 ? this.player1 : this.player2);
 		
 		}
+		
+		randomItem() {
+			return Math.floor(Math.random() * 6);
+		}
 	
 		initializeBoard() {
 			var nx, ny;
 			
-			var buf1 = messages.newMessage(INITIALIZE_BOARD, 36);
-			var buf2 = messages.newMessage(INITIALIZE_BOARD, 36);
+			var buf1 = messages.newMessage(INITIALIZE_BOARD, this.width * this.height);
+			var buf2 = messages.newMessage(INITIALIZE_BOARD, this.width * this.height);
 		
-			for (var y = 0; y < 6; y++) {
-				for (var x = 0; x < 6; x++) {
-					buf1.writeInt8(this.board[x][y], ((y * 6) + x) + 2);
+			for (var y = 0; y < this.height; y++) {
+				for (var x = 0; x < this.width; x++) {
+					buf1.writeInt8(this.board[x][y], ((y * this.height) + x) + 2);
 					
-					buf2.writeInt8(this.board[5 - x][5 - y], ((y * 6) + x) + 2);
+					buf2.writeInt8(this.board[this.width - 1 - x][this.height - 1 - y], ((y * this.height) + x) + 2);
 				}
 			}
 		
@@ -117,10 +122,10 @@ EventEmitter = require("events");
 			buf1.writeInt8(x2, 4);
 			buf1.writeInt8(y2, 5);
 			
-			buf2.writeInt8(5 - x1, 2);
-			buf2.writeInt8(5 - y1, 3);
-			buf2.writeInt8(5 - x2, 4);
-			buf2.writeInt8(5 - y2, 5);
+			buf2.writeInt8(this.width - 1 - x1, 2);
+			buf2.writeInt8(this.height - 1 - y1, 3);
+			buf2.writeInt8(this.width - 1 - x2, 4);
+			buf2.writeInt8(this.height - 1 - y2, 5);
 			
 			this.player1.write(buf1);
 			this.player2.write(buf2);
@@ -131,7 +136,7 @@ EventEmitter = require("events");
 			var buf2 = messages.newMessage(DELETE_INV_ITEM, 2);
 		
 			buf1.writeInt8(slot, 2);
-			buf2.writeInt8(5 - slot, 2);
+			buf2.writeInt8(this.width - 1 - slot, 2);
 		
 			if (player == this.player1) {
 				this.player1Inv[slot] = null;
@@ -162,8 +167,8 @@ EventEmitter = require("events");
 			buf1.writeInt8(y, 3);
 			buf1.writeInt8(itemID, 4);
 		
-			buf2.writeInt8(5 - x, 2);
-			buf2.writeInt8(5 - y, 3);
+			buf2.writeInt8(this.width - 1 - x, 2);
+			buf2.writeInt8(this.height - 1 - y, 3);
 			buf2.writeInt8(itemID, 4);
 		
 			if (this.player1 == player) {
@@ -187,8 +192,8 @@ EventEmitter = require("events");
 			buf1.writeInt8(x, 2);
 			buf1.writeInt8(y, 3);
 		
-			buf2.writeInt8(5 - x, 2);
-			buf2.writeInt8(5 - y, 3);
+			buf2.writeInt8(this.width - 1 - x, 2);
+			buf2.writeInt8(this.height - 1 - y, 3);
 		
 			if (this.player1 == player) {
 				buf1.writeInt8(0, 4);
@@ -211,8 +216,8 @@ EventEmitter = require("events");
 		
 			buf1.writeInt8(x, 2);
 			buf1.writeInt8(y, 3);
-			buf2.writeInt8(5 - x, 2);
-			buf2.writeInt8(5 - y, 3);
+			buf2.writeInt8(this.width - 1 - x, 2);
+			buf2.writeInt8(this.height - 1 - y, 3);
 
 			this.player1.write(buf1);
 			this.player2.write(buf2);
@@ -222,12 +227,12 @@ EventEmitter = require("events");
 			var buf1 = messages.newMessage(INITIALIZE_INV, 12);
 			var buf2 = messages.newMessage(INITIALIZE_INV, 12);
 		
-			for (var i = 0; i < 6; i++) {
+			for (var i = 0; i < this.width; i++) {
 				buf1.writeInt8(this.player1Inv[i], 2 + i);
-				buf1.writeInt8(this.player2Inv[i], 8 + i);
+				buf1.writeInt8(this.player2Inv[i], 2 + this.width + i);
 			
-				buf2.writeInt8(this.player2Inv[i], 2 + (5 - i));
-				buf2.writeInt8(this.player1Inv[i], 8 + (5 - i));
+				buf2.writeInt8(this.player2Inv[i], 2 + (this.width - 1 - i));
+				buf2.writeInt8(this.player1Inv[i], 2 + this.width + (this.width - 1 - i));
 			}
 		
 			this.player1.write(buf1);
@@ -239,7 +244,7 @@ EventEmitter = require("events");
 			var buf2 = messages.newMessage(CREATE_INV_ITEM, 3);
 		
 			buf1.writeInt8(slot, 2);
-			buf2.writeInt8(5 - slot, 2);
+			buf2.writeInt8(this.width - 1 - slot, 2);
 			
 			buf1.writeInt8(itemID, 3);
 			buf2.writeInt8(itemID, 3);
@@ -269,8 +274,8 @@ EventEmitter = require("events");
 				buf.writeInt8(x, 2);
 				buf.writeInt8(y, 3);
 			} else {
-				buf.writeInt8(5 - x, 2);
-				buf.writeInt8(5 - y, 3);
+				buf.writeInt8(this.width - 1 - x, 2);
+				buf.writeInt8(this.height - 1 - y, 3);
 			}
 		
 			player.write(buf);
@@ -426,8 +431,8 @@ EventEmitter = require("events");
 			}
 			
 			if (player == this.player2) {
-				x = 5 - x;
-				y = 5 - y;
+				x = this.width - 1 - x;
+				y = this.height - 1 - y;
 			}
 			
 			var matches = new PositionArray();
@@ -443,7 +448,7 @@ EventEmitter = require("events");
 				}
 			
 				this.deleteInvItem(x, player);
-				this.createInvItem(x, Math.floor(Math.random() * 6), player);
+				this.createInvItem(x, this.randomItem(), player);
 			
 				if (player == this.player1) {
 					this.fillDown();
@@ -481,12 +486,12 @@ EventEmitter = require("events");
 				matches.push(herePos);
 			}
 			
-			if (y + 1 < 6) {
+			if (y + 1 < this.height) {
 				testPos = position(x, y + 1);
 				this.checkIfMatch(testPos, item, matches);
 			}
 		
-			if (x + 1 < 6) {
+			if (x + 1 < this.width) {
 				testPos = position(x + 1, y);
 				this.checkIfMatch(testPos, item, matches);
 			}
@@ -516,9 +521,9 @@ EventEmitter = require("events");
 		anyMatches(inv) {
 			var matches;
 		
-			for (var x = 0; x < 6; x++) {
+			for (var x = 0; x < this.width; x++) {
 			
-				for (var y = 0; y < 6; y++) {
+				for (var y = 0; y < this.height; y++) {
 				
 					matches = new PositionArray();
 					this.checkForMatches(x, y, inv[x], matches);
@@ -538,11 +543,11 @@ EventEmitter = require("events");
 		
 			var ground;
 		
-			for (var x = 0; x < 6; x++) {
+			for (var x = 0; x < this.width; x++) {
 			
 				ground = 0;
 			
-				for (var y = 0; y < 6; y++) {
+				for (var y = 0; y < this.height; y++) {
 				
 					if (this.board[x][y] != null) {
 					
@@ -556,8 +561,8 @@ EventEmitter = require("events");
 				
 				}
 			
-				for (var i = ground; i < 6; i++) {
-					this.createBoardItem(x, i, Math.floor(Math.random() * 6), this.player1);
+				for (var i = ground; i < this.height; i++) {
+					this.createBoardItem(x, i, this.randomItem(), this.player1);
 				}
 			
 			}
@@ -568,11 +573,11 @@ EventEmitter = require("events");
 		
 			var ground;
 		
-			for (var x = 0; x < 6; x++) {
+			for (var x = 0; x < this.width; x++) {
 			
-				ground = 5;
+				ground = this.height - 1;
 			
-				for (var y = 5; y >= 0; y--) {
+				for (var y = this.height - 1; y >= 0; y--) {
 				
 					if (this.board[x][y] != null) {
 					
@@ -587,7 +592,7 @@ EventEmitter = require("events");
 				}
 			
 				for (var i = ground; i >= 0; i--) {
-					this.createBoardItem(x, i, Math.floor(Math.random() * 6), this.player2);
+					this.createBoardItem(x, i, this.randomItem(), this.player2);
 				}
 			}
 		
