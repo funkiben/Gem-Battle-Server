@@ -67,7 +67,6 @@ var server = net.createServer(function (socket) {
 		
 		if (socket.game != null) {
 			socket.game.playerLeft(socket);
-			socket.game = null;
 		}
 		
 		console.log("client disconnected: " + socket.name);

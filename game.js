@@ -419,6 +419,10 @@ messages = require("./messages.js");
 		}
 	
 		tryMoveItem(x, y, player) {
+			if (this.turn != player) {
+				return;
+			}
+			
 			if (player == this.player2) {
 				x = 5 - x;
 				y = 5 - y;
