@@ -26,10 +26,12 @@ var server = net.createServer(function (socket) {
 	});
 	
 	socket.messages.on("setName", function onSetName(data) {
-		socket.name = data;
+		socket.name = data.toString();
 		
 		if (lookingForGame == null) {
+			
 			lookingForGame = socket;
+			
 		} else {
 			
 			socket.game = lookingForGame.game = new GemBattleGame(socket, lookingForGame, 6, 6);
