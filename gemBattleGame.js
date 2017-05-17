@@ -7,6 +7,7 @@ const Match3Game = require("./match3Game");
 	const SET_DEFENSE = 				29; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
 	const SET_ENERGY = 					32; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
 	const ATTACKED =					33; // 5 bytes: 2 bytes total attack amount, 2 bytes damage to health, last byte 0=thisPlayer or 1=otherPlayer
+	const GAME_PROPERTIES =				34; // 6 bytes: 2 bytes max health, 2 bytes max defense, 2 bytes max energy
 	
 	const POT = 0;
 	const GEM = 1;
@@ -15,11 +16,23 @@ const Match3Game = require("./match3Game");
 	const STAR  = 4;
 	const SWORD = 5;
 	
+	const POT_BIAS = 1;
+	const GEM_BIAS = 2;
+	const HEART_BIAS = 2;
+	const SHIELD_BIAS = 4;
+	const STAR_BIAS  = 2;
+	const SWORD_BIAS = 3;
+	const BIAS_COMBINED = POT_BIAS + GEM_BIAS + HEART_BIAS + SHIELD_BIAS + SWORD_BIAS + STAR_BIAS;
+	
 	// game properties
 	const INIT_LOOT = 0;
 	const INIT_HEALTH = 80;
 	const INIT_DEFENSE = 40;
 	const INIT_ENERGY = 0;
+	
+	const MAX_HEALTH = 100;
+	const MAX_DEFENSE = 80;
+	const MAX_ENERGY = 40;
 	
 	const HEART_REGEN_TURNS = 5;
 	const HEART_REGEN_AMOUNT = 1;
@@ -31,6 +44,8 @@ const Match3Game = require("./match3Game");
 	class GemBattleGame extends Match3Game {
 		constructor(player1, player2) {
 			super(player1, player2, 6, 6);
+			
+			this.gameProperties();
 			
 			this.setHealth(this.player1, INIT_HEALTH);
 			this.setHealth(this.player2, INIT_HEALTH);
@@ -87,6 +102,45 @@ const Match3Game = require("./match3Game");
 			});
 			
 		}
+		
+		invItem(slot, player) {
+			return this.weightedRandomItem();
+		}
+		
+		boardItem(x, y) {
+			return this.weightedRandomItem();
+		}
+		
+		weightedRandomItem() {
+			var val = BIAS_COMBINED * Math.random();
+			
+			var test;
+			
+			if (val < (test = POT_BIAS)) {
+				return POT;
+			} else if (val < (test += GEM_BIAS)) {
+				return GEM;
+			} else if (val < (test += HEART_BIAS)) {
+				return HEART;
+			} else if (val < (test += SHIELD_BIAS)) {
+				return SHIELD;
+			} else if (val < (test += STAR_BIAS)) {
+				return STAR;
+			} else if (val < (test += SWORD_BIAS)) {
+				return SWORD;
+			}
+		}
+		
+		gameProperties() {
+			var buf = messages.newMessage(GAME_PROPERTIES, 6);
+			
+			buf.writeUInt16LE(MAX_HEALTH, 2);
+			buf.writeUInt16LE(MAX_DEFENSE, 4);
+			buf.writeUInt16LE(MAX_ENERGY, 6);
+			
+			this.player1.write(buf);
+			this.player2.write(buf);
+		}
 	
 		setLoot(player, value) {
 			player.loot = value;
@@ -110,11 +164,15 @@ const Match3Game = require("./match3Game");
 		}
 	
 		setHealth(player, value) {
-			player.health = value;
-			
-			if (player.health < 0) {
-				player.health = 0;
+			if (value < 0) {
+				value = 0;
 			}
+			
+			if (value > MAX_HEALTH) {
+				value = MAX_HEALTH;
+			}
+			
+			player.health = value;
 		
 			var buf1 = messages.newMessage(SET_HEALTH, 3);
 			var buf2 = messages.newMessage(SET_HEALTH, 3);
@@ -145,6 +203,10 @@ const Match3Game = require("./match3Game");
 		}
 	
 		setDefense(player, value) {
+			if (value > MAX_DEFENSE) {
+				value = MAX_DEFENSE;
+			}
+			
 			player.defense = value;
 		
 			var buf1 = messages.newMessage(SET_DEFENSE, 3);
@@ -166,6 +228,10 @@ const Match3Game = require("./match3Game");
 		}
 		
 		setEnergy(player, value) {
+			if (value > MAX_ENERGY) {
+				value = MAX_ENERGY;
+			}
+			
 			player.energy = value;
 		
 			var buf1 = messages.newMessage(SET_ENERGY, 3);
