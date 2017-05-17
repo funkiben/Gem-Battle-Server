@@ -17,20 +17,28 @@ EventEmitter = require("events");
 			
 			var game = this;
 			
-			player1.messages.once("leaveGame", function(data) {
-				game.playerLeft(player1);
-			});
+			function callPlayer1Leave() {
+				console.log("calling player1 leave")
+				game.playerLeft(game.player1);
+			}
+		
+			function callPlayer2Leave() {
+				console.log("calling player2 leave")
+				game.playerLeft(game.player2);
+			}
 			
-			player2.messages.once("leaveGame", function(data) {
-				game.playerLeft(player2);
-			});
+			player1.messages.once("leaveGame", callPlayer1Leave);
 			
-			player1.once("end", function() {
-				game.playerLeft(player1);
-			});
+			player2.messages.once("leaveGame", callPlayer2Leave);
 			
-			player2.once("end", function() {
-				game.playerLeft(player1);
+			player1.once("end", callPlayer1Leave);
+			
+			player2.once("end", callPlayer2Leave);
+			
+			this.events.once("gameEnd", function() {
+				console.log("trying to remove listeners from player1 and player2");
+				player1.removeListener("end", callPlayer1Leave);
+				player2.removeListener("end", callPlayer2Leave);
 			});
 			
 			this.giveOpponentsName();
@@ -78,8 +86,10 @@ EventEmitter = require("events");
 			buf.writeInt8(0, 2);
 		
 			if (player == this.player1) {
+				console.log("telling player2 that player1 left");
 				this.player2.write(buf);
 			} else {
+				console.log("telling player1 that player2 left");
 				this.player1.write(buf);
 			}
 			
