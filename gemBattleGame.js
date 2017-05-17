@@ -24,7 +24,6 @@ const Match3Game = require("./match3Game");
 	const SWORD_BIAS = 2;
 	const BIAS_COMBINED = POT_BIAS + GEM_BIAS + HEART_BIAS + SHIELD_BIAS + SWORD_BIAS + STAR_BIAS;
 	
-	// game properties
 	const INIT_LOOT = 0;
 	const INIT_HEALTH = 80;
 	const INIT_DEFENSE = 40;
