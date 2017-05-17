@@ -17,11 +17,11 @@ const Match3Game = require("./match3Game");
 	const SWORD = 5;
 	
 	const POT_BIAS = 1;
-	const GEM_BIAS = 2;
-	const HEART_BIAS = 2;
-	const SHIELD_BIAS = 4;
-	const STAR_BIAS  = 2;
-	const SWORD_BIAS = 3;
+	const GEM_BIAS = 1.5;
+	const HEART_BIAS = 1.5;
+	const SHIELD_BIAS = 2;
+	const STAR_BIAS  = 1.5;
+	const SWORD_BIAS = 2;
 	const BIAS_COMBINED = POT_BIAS + GEM_BIAS + HEART_BIAS + SHIELD_BIAS + SWORD_BIAS + STAR_BIAS;
 	
 	// game properties
@@ -34,10 +34,10 @@ const Match3Game = require("./match3Game");
 	const MAX_DEFENSE = 80;
 	const MAX_ENERGY = 40;
 	
-	const HEART_REGEN_TURNS = 5;
+	const HEART_REGEN_TURNS = 3;
 	const HEART_REGEN_AMOUNT = 1;
-	const SWORD_ATTACK= 3;
-	const SHIELD_DEFENSE = 2;
+	const SWORD_ATTACK= 4;
+	const SHIELD_DEFENSE = 1;
 	const GEM_LOOT = 1;
 	const STAR_ENERGY = 1;
 	
