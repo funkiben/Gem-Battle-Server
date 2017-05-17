@@ -6,7 +6,6 @@ const GemBattleGame = require("./gemBattleGame");
 
 // messages server received from clients
 messages.labelRegistry = {
-	1:'findGame',
 	2:'setName',
 	3:'leaveGame',
 	4:'tryMoveItem'
@@ -28,10 +27,7 @@ var server = net.createServer(function (socket) {
 	
 	socket.messages.on("setName", function onSetName(data) {
 		socket.name = data;
-		console.log("new player: " + socket.name);
-	});
-	
-	socket.messages.on("findGame", function onFindGame(data) {
+		
 		if (lookingForGame == null) {
 			lookingForGame = socket;
 		} else {
@@ -53,9 +49,6 @@ var server = net.createServer(function (socket) {
 		
 		console.log("client disconnected: " + socket.name);
 	});
-	
-	
-	socket.messages.emit("findGame", null); // TEMP
 	
 });
 
