@@ -303,12 +303,13 @@ const Game = require("./game");
 			}
 			
 			var matches = new PositionArray();
+			var item = (player == this.player1 ? this.player1Inv[x] : this.player2Inv[x]);
 			
-			this.checkForMatches(x, y, player == this.player1 ? this.player1Inv[x] : this.player2Inv[x], matches);
+			this.checkForMatches(x, y, item, matches);
 			
 			if (matches.length >= 3) {
 				
-				this.events.emit("onMatch", player, matches);
+				this.events.emit("match", player, item, matches);
 				
 				this.moveInvItemToBoard(x, y, player);
 				
