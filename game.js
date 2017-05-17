@@ -47,12 +47,12 @@ EventEmitter = require("events");
 		}
 	
 		giveOpponentsName() {
-			var buf1 = messages.newMessage(OPPONENTS_NAME, this.player1.name.length);
-			var buf2 = messages.newMessage(OPPONENTS_NAME, this.player2.name.length);
-		
+			var buf1 = messages.newMessage(OPPONENTS_NAME, this.player2.name.length);
+			var buf2 = messages.newMessage(OPPONENTS_NAME, this.player1.name.length);
+			
 			buf1.write(this.player2.name, 2, this.player2.name.length, 'utf8');
 			buf2.write(this.player1.name, 2, this.player1.name.length, 'utf8');
-		
+			
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 			
