@@ -17,6 +17,8 @@ const Game = require("./game");
 	const MOVE_ITEM_FAILED = 			24; // 2 bytes: x, y
 	const OUT_OF_MATCHES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
 	
+	const NORMAL_MATCH =				0;
+	
 	class Match3Game extends Game {
 		constructor(player1, player2, width, height) {
 			super(player1, player2);
@@ -297,20 +299,14 @@ const Game = require("./game");
 			
 			if (matches.length >= 3) {
 				
-				this.events.emit("match", player, matches);
-				
 				this.moveInvItemToBoard(x, y, player);
 				
-				for (var m in matches) {
-					this.deleteBoardItem(matches[m].x, matches[m].y, 0);
-				}
+				this.doMatch(matches, player, NORMAL_MATCH);
 			
 				this.deleteInvItem(x, player);
 				this.createInvItem(x, this.invItem(player), player);
 			
 				if (player == this.player1) {
-					this.fillDown();
-				
 					if (this.anyMatches(this.player2Inv)) {
 						this.setTurn(this.player2);
 					} else {
@@ -318,8 +314,6 @@ const Game = require("./game");
 					}
 				
 				} else {
-					this.fillUp();
-					
 					if (this.anyMatches(this.player1Inv)) {
 						this.setTurn(this.player1);
 					} else {
@@ -334,6 +328,20 @@ const Game = require("./game");
 			
 			}
 		
+		}
+		
+		doMatch(matches, player, how) {
+			this.events.emit("match", player, matches, how);
+			
+			for (var m in matches) {
+				this.deleteBoardItem(matches[m].x, matches[m].y, how);
+			}
+			
+			if (player == this.player1) {
+				this.fillDown();
+			} else {
+				this.fillUp();
+			}
 		}
 	
 		checkForMatches(x, y, item, matches) {

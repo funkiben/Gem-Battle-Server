@@ -43,7 +43,8 @@ const Match3Game = require("./match3Game");
 	
 	const POWERUP_HAMMER_SMASH = 1;
 	const POWERUP_MATCH_ALL = 2;
-	
+	const POWERUP_MATCH_ROW = 2;
+	const POWERUP_MATCH_COLUMN = 2;
 	
 	class GemBattleGame extends Match3Game {
 		constructor(player1, player2) {
@@ -75,7 +76,7 @@ const Match3Game = require("./match3Game");
 				}
 			});
 			
-			this.events.on("match", function(player, matches) {
+			this.events.on("match", function(player, matches, how) {
 				
 				var gemCount = matches.count(GEM), 
 					heartCount = matches.count(HEART), 
@@ -307,18 +308,7 @@ const Match3Game = require("./match3Game");
 				}
 			}
 			
-			this.events.emit("matches", matches, player);
-			
-			
-			for (var m in matches) {
-				this.deleteBoardItem(matches[m].x, matches[m].y, POWERUP_HAMMER_SMASH);
-			}
-			
-			if (player == this.player1) {
-				this.fillDown();
-			} else {
-				this.fillUp();
-			}
+			this.doMatch(matches, player, POWERUP_HAMMER_SMASH);
 			
 		}
 		
@@ -334,18 +324,29 @@ const Match3Game = require("./match3Game");
 				}
 			}
 			
-			this.events.emit("matches", matches, player);
+			this.doMatch(matches, player, POWERUP_MATCH_ALL);
 			
+		}
+		
+		matchRow(y, player) {
+			var matches = new MatchArray();
 			
-			for (var m in matches) {
-				this.deleteBoardItem(matches[m].x, matches[m].y, POWERUP_MATCH_ALL);
+			for (var x = 0; x < this.width; x++) {
+				matches.add(this.board[x][y], x, y);
 			}
 			
-			if (player == this.player1) {
-				this.fillDown();
-			} else {
-				this.fillUp();
+			this.doMatch(matches, player, POWERUP_MATCH_ROW);
+			
+		}
+		
+		matchColumn(x, player) {
+			var matches = new MatchArray();
+			
+			for (var y = 0; y < this.height; y++) {
+				matches.add(this.board[x][y], x, y);
 			}
+			
+			this.doMatch(matches, player, POWERUP_MATCH_COLUMN);
 			
 		}
 		
