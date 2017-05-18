@@ -1,3 +1,4 @@
+const MatchArray = require("./matchArray");
 const Match3Game = require("./match3Game");
 
 (function() {
@@ -40,6 +41,10 @@ const Match3Game = require("./match3Game");
 	const GEM_LOOT = 1;
 	const STAR_ENERGY = 1;
 	
+	const POWERUP_HAMMER_SMASH = 1;
+	const POWERUP_MATCH_ALL = 2;
+	
+	
 	class GemBattleGame extends Match3Game {
 		constructor(player1, player2) {
 			super(player1, player2, 6, 6);
@@ -70,29 +75,29 @@ const Match3Game = require("./match3Game");
 				}
 			});
 			
-			this.events.on("match", function(player, item, matches) {
+			this.events.on("match", function(player, matches) {
 				
-				if (item == GEM) {
+				if (matches.itemCount[GEM] > 0) {
 					
-					game.setLoot(player, player.loot + matches.length * GEM_LOOT);
+					game.setLoot(player, player.loot + matches.itemCount[GEM] * GEM_LOOT);
 					
-				} else if (item == HEART) {
+				} else if (matches.itemCount[HEART] > 0) {
 					
-					for (var i = 0; i < matches.length; i++) {
+					for (var i = 0; i < matches.itemCount[HEART]; i++) {
 						player.hearts.push(HEART_REGEN_TURNS);
 					}
 					
-				} else if (item == SHIELD) {
+				} else if (matches.itemCount[SHIELD] > 0) {
 					
-					game.setDefense(player, player.defense + matches.length * SHIELD_DEFENSE);
+					game.setDefense(player, player.defense + matches.itemCount[SHIELD] * SHIELD_DEFENSE);
 					
-				} else if (item == STAR) {
+				} else if (matches.itemCount[STAR] > 0) {
 					
-					game.setEnergy(player, player.energy + matches.length * STAR_ENERGY);
+					game.setEnergy(player, player.energy + matches.itemCount[STAR] * STAR_ENERGY);
 					
-				} else if (item == SWORD) {
+				} else if (matches.itemCount[SWORD] > 0) {
 					
-					game.attack(player == game.player1 ? game.player2 : game.player1, matches.length * SWORD_ATTACK);
+					game.attack(player == game.player1 ? game.player2 : game.player1, matches.itemCount[SWORD] * SWORD_ATTACK);
 					
 				}
 				
@@ -284,7 +289,61 @@ const Match3Game = require("./match3Game");
 		
 			this.player1.write(buf1);
 			this.player2.write(buf2);
-		}	
+		}
+		
+		hammerSmash(x, y, player) {
+			
+			var matches = new MatchArray();
+			
+			for (var xi = Math.max(x - 1, 0); xi <= Math.min(x + 1, this.width); xi++) {
+				for (var yi = Math.max(y - 1, 0); yi <= Math.min(y + 1, this.height); yi++) {
+					matches.push(this.board[xi][yi], xi, yi);
+				}
+			}
+			
+			this.events.emit("matches", matches, player);
+			
+			
+			for (var m in matches) {
+				this.deleteBoardItem(matches[m].x, matches[m].y, POWERUP_HAMMER_SMASH);
+			}
+			
+			if (player == this.player1) {
+				this.fillDown();
+			} else {
+				this.fillUp();
+			}
+			
+		}
+		
+		matchAll(item, player) {
+			
+			var matches = new MatchArray();
+			
+			for (var x = 0; x < this.width; x++) {
+				for (var y = 0; y < this.height; y++) {
+					if (this.board[x][y] == item) {
+						matches.add(item, x, y);
+					}
+				}
+			}
+			
+			this.events.emit("matches", matches, player);
+			
+			
+			for (var m in matches) {
+				this.deleteBoardItem(matches[m].x, matches[m].y, POWERUP_MATCH_ALL);
+			}
+			
+			if (player == this.player1) {
+				this.fillDown();
+			} else {
+				this.fillUp();
+			}
+			
+		}
+		
+		
 	}
 	
 	module.exports = GemBattleGame;

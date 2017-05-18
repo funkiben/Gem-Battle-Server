@@ -1,3 +1,4 @@
+const MatchArray = require("./matchArray");
 const Game = require("./game");
 
 (function() {
@@ -9,28 +10,11 @@ const Game = require("./game");
 	const DELETE_INV_ITEM =  			18; // 2 bytes: slot index, 0=thisPlayer or 1=otherPlayer
 	const CREATE_BOARD_ITEM =  			19; // 4 bytes: x, y, item id, 0=thisPlayer or 1=otherPlayer
 	const MOVE_INV_ITEM_TO_BOARD =  	20; // 3 bytes: x, y, 0=thisPlayer or 1=otherPlayer
-	const DELETE_BOARD_ITEM	=			21; // 2 bytes: x, y
+	const DELETE_BOARD_ITEM	=			21; // 3 bytes: x, y, how (0=match)
 	const INITIALIZE_INV =				22; // 12 bytes: 1 byte for each slot, first 6 are thisPlayer, last 6 are otherPlayer
 	const CREATE_INV_ITEM = 			23; // 3 bytes: slot index, item id, 0=thisPlayer or 1=otherPlayer
 	const MOVE_ITEM_FAILED = 			24; // 2 bytes: x, y
 	const OUT_OF_MATCHES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
-
-	function position(x, y) {
-		return {'x': x, 'y': y};
-	}
-	
-	class PositionArray extends Array {
-		contains(e) {
-			for (var m in this) {
-				if (this[m].x == e.x && this[m].y == e.y) {
-					return true;
-				}
-			}
-	
-			return false;
-		}
-	
-	}
 	
 	class Match3Game extends Game {
 		constructor(player1, player2, width, height) {
@@ -203,17 +187,20 @@ const Game = require("./game");
 		
 		}
 	
-		deleteBoardItem(x, y) {
-			var buf1 = messages.newMessage(DELETE_BOARD_ITEM, 2);
-			var buf2 = messages.newMessage(DELETE_BOARD_ITEM, 2);
+		deleteBoardItem(x, y, how) {
+			var buf1 = messages.newMessage(DELETE_BOARD_ITEM, 3);
+			var buf2 = messages.newMessage(DELETE_BOARD_ITEM, 3);
 		
 			this.board[x][y] = null;
 		
 			buf1.writeInt8(x, 2);
 			buf1.writeInt8(y, 3);
+			buf1.writeInt8(how, 4);
+			
 			buf2.writeInt8(this.width - 1 - x, 2);
 			buf2.writeInt8(this.height - 1 - y, 3);
-
+			buf2.writeInt8(how, 4);
+			
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		}
@@ -302,19 +289,19 @@ const Game = require("./game");
 				y = this.height - 1 - y;
 			}
 			
-			var matches = new PositionArray();
+			var matches = new MatchArray();
 			var item = (player == this.player1 ? this.player1Inv[x] : this.player2Inv[x]);
 			
 			this.checkForMatches(x, y, item, matches);
 			
 			if (matches.length >= 3) {
 				
-				this.events.emit("match", player, item, matches);
+				this.events.emit("match", player, matches);
 				
 				this.moveInvItemToBoard(x, y, player);
 				
 				for (var m in matches) {
-					this.deleteBoardItem(matches[m].x, matches[m].y);
+					this.deleteBoardItem(matches[m].x, matches[m].y, 0);
 				}
 			
 				this.deleteInvItem(x, player);
@@ -350,40 +337,34 @@ const Game = require("./game");
 	
 		checkForMatches(x, y, item, matches) {
 		
-			var herePos = position(x, y), testPos;
-			
-			if (!matches.contains(herePos)) {
-				matches.push(herePos);
+			if (!matches.contains(x, y)) {
+				matches.push(x, y);
 			}
 			
 			if (y + 1 < this.height) {
-				testPos = position(x, y + 1);
-				this.checkIfMatch(testPos, item, matches);
+				this.checkIfMatch(x, y + 1, item, matches);
 			}
 		
 			if (x + 1 < this.width) {
-				testPos = position(x + 1, y);
-				this.checkIfMatch(testPos, item, matches);
+				this.checkIfMatch(x + 1, y, item, matches);
 			}
 		
 			if (y - 1 >= 0) {
-				testPos = position(x, y - 1);
-				this.checkIfMatch(testPos, item, matches);
+				this.checkIfMatch(x, y - 1, item, matches);
 			}
 		
 			if (x - 1 >= 0) {
-				testPos = position(x - 1, y);
-				this.checkIfMatch(testPos, item, matches);
+				this.checkIfMatch(x - 1, y, item, matches);
 			}
 		
 		}
 		
-		checkIfMatch(testPos, item, matches) {
-			var test = this.board[testPos.x][testPos.y];
-		
-			if (test === item && !matches.contains(testPos)) {
-				matches.push(testPos);
-				this.checkForMatches(testPos.x, testPos.y, item, matches);
+		checkIfMatch(tx, ty, item, matches) {
+			var test = this.board[tx][ty];
+			
+			if (test === item && !matches.contains(tx, ty)) {
+				matches.push(test, tx, ty);
+				this.checkForMatches(tx, ty, item, matches);
 			}
 			
 		}
@@ -395,7 +376,7 @@ const Game = require("./game");
 			
 				for (var y = 0; y < this.height; y++) {
 				
-					matches = new PositionArray();
+					matches = new MatchArray();
 					this.checkForMatches(x, y, inv[x], matches);
 				
 					if (matches.length >= 3) {
