@@ -305,6 +305,10 @@ const messages = require("./messages");
 		
 		hammerSmash(game, x, y, matches, player) {
 			
+			if (player.energy != MAX_ENERGY) {
+				return false;
+			}
+			
 			for (var xi = Math.max(x - 1, 0); xi <= Math.min(x + 1, game.width); xi++) {
 				for (var yi = Math.max(y - 1, 0); yi <= Math.min(y + 1, game.height); yi++) {
 					matches.push(game.board[xi][yi], xi, yi);
@@ -316,6 +320,10 @@ const messages = require("./messages");
 		}
 		
 		matchAll(game, x, y, matches, player) {
+			
+			if (player.energy != MAX_ENERGY) {
+				return false;
+			}
 			
 			var item = game.board[x][y];
 			
@@ -333,6 +341,10 @@ const messages = require("./messages");
 		
 		matchRow(game, x, y, matches, player) {
 			
+			if (player.energy != MAX_ENERGY) {
+				return false;
+			}
+			
 			for (var xi = 0; xi < game.width; xi++) {
 				matches.add(game.board[xi][y], xi, y);
 			}
@@ -342,6 +354,10 @@ const messages = require("./messages");
 		}
 		
 		matchColumn(game, x, y, matches, player) {
+			
+			if (player.energy != MAX_ENERGY) {
+				return false;
+			}
 			
 			for (var yi = 0; yi < game.height; yi++) {
 				matches.add(game.board[x][yi], x, yi);
