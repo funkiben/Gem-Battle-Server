@@ -1,6 +1,7 @@
 const MatchArray = require("./matchArray");
 const Game = require("./game");
 
+
 (function() {
 
 
@@ -92,7 +93,7 @@ const Game = require("./game");
 		moveBoardItem(x1, y1, x2, y2) {
 			var buf1 = messages.newMessage(MOVE_BOARD_ITEM, 4);
 			var buf2 = messages.newMessage(MOVE_BOARD_ITEM, 4);
-		
+			
 			this.board[x2][y2] = this.board[x1][y1];
 			this.board[x1][y1] = null;
 		
@@ -336,9 +337,9 @@ const Game = require("./game");
 		}
 	
 		checkForMatches(x, y, item, matches) {
-		
+			
 			if (!matches.contains(x, y)) {
-				matches.push(x, y);
+				matches.push(item, x, y);
 			}
 			
 			if (y + 1 < this.height) {

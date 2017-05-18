@@ -77,27 +77,33 @@ const Match3Game = require("./match3Game");
 			
 			this.events.on("match", function(player, matches) {
 				
-				if (matches.itemCount[GEM] > 0) {
+				var gemCount = matches.count(GEM), 
+					heartCount = matches.count(HEART), 
+					shieldCount = matches.count(SHIELD), 
+					starCount = matches.count(STAR), 
+					swordCount = matches.count(SWORD)
+				
+				if (gemCount > 0) {
 					
-					game.setLoot(player, player.loot + matches.itemCount[GEM] * GEM_LOOT);
+					game.setLoot(player, player.loot + gemCount * GEM_LOOT);
 					
-				} else if (matches.itemCount[HEART] > 0) {
+				} else if (heartCount > 0) {
 					
-					for (var i = 0; i < matches.itemCount[HEART]; i++) {
+					for (var i = 0; i < heartCount; i++) {
 						player.hearts.push(HEART_REGEN_TURNS);
 					}
 					
-				} else if (matches.itemCount[SHIELD] > 0) {
+				} else if (shieldCount > 0) {
 					
-					game.setDefense(player, player.defense + matches.itemCount[SHIELD] * SHIELD_DEFENSE);
+					game.setDefense(player, player.defense + shieldCount * SHIELD_DEFENSE);
 					
-				} else if (matches.itemCount[STAR] > 0) {
+				} else if (starCount > 0) {
 					
-					game.setEnergy(player, player.energy + matches.itemCount[STAR] * STAR_ENERGY);
+					game.setEnergy(player, player.energy + starCount * STAR_ENERGY);
 					
-				} else if (matches.itemCount[SWORD] > 0) {
+				} else if (swordCount > 0) {
 					
-					game.attack(player == game.player1 ? game.player2 : game.player1, matches.itemCount[SWORD] * SWORD_ATTACK);
+					game.attack(player == game.player1 ? game.player2 : game.player1, swordCount * SWORD_ATTACK);
 					
 				}
 				
