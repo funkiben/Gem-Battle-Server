@@ -42,14 +42,19 @@ const messages = require("./messages");
 	const GEM_LOOT = 1;
 	const STAR_ENERGY = 1;
 	
-	const POWERUP_HAMMER_SMASH = 1;
-	const POWERUP_MATCH_ALL = 2;
-	const POWERUP_MATCH_ROW = 3;
-	const POWERUP_MATCH_COLUMN = 4;
+	const HAMMER_SMASH = 1;
+	const MATCH_ALL = 2;
+	const MATCH_ROW = 3;
+	const MATCH_COLUMN = 4;
 	
 	class GemBattleGame extends Match3Game {
 		constructor(player1, player2) {
 			super(player1, player2, 6, 6);
+			
+			this.matchTypes[HAMMER_SMASH] = this.hammerSmash;
+			this.matchTypes[MATCH_ALL] = this.matchAll;
+			this.matchTypes[MATCH_ROW] = this.matchRow;
+			this.matchTypes[MATCH_COLUMN] = this.matchColumn;
 			
 			this.gameProperties();
 			
@@ -59,7 +64,6 @@ const messages = require("./messages");
 			this.setDefense(this.player2, INIT_DEFENSE);
 			this.setLoot(this.player1, INIT_LOOT);
 			this.setLoot(this.player2, INIT_LOOT);
-			
 			
 			this.player1.hearts = new Array();
 			this.player2.hearts = new Array();
@@ -299,55 +303,51 @@ const messages = require("./messages");
 			this.player2.write(buf2);
 		}
 		
-		hammerSmash(x, y, player) {
+		hammerSmash(game, x, y, matches, player) {
 			
-			var matches = new MatchArray();
-			
-			for (var xi = Math.max(x - 1, 0); xi <= Math.min(x + 1, this.width); xi++) {
-				for (var yi = Math.max(y - 1, 0); yi <= Math.min(y + 1, this.height); yi++) {
-					matches.push(this.board[xi][yi], xi, yi);
+			for (var xi = Math.max(x - 1, 0); xi <= Math.min(x + 1, game.width); xi++) {
+				for (var yi = Math.max(y - 1, 0); yi <= Math.min(y + 1, game.height); yi++) {
+					matches.push(game.board[xi][yi], xi, yi);
 				}
 			}
 			
-			this.doMatch(matches, player, POWERUP_HAMMER_SMASH);
+			return true;
 			
 		}
 		
-		matchAll(item, player) {
+		matchAll(game, x, y, matches, player) {
 			
-			var matches = new MatchArray();
+			var item = game.board[x][y];
 			
-			for (var x = 0; x < this.width; x++) {
-				for (var y = 0; y < this.height; y++) {
-					if (this.board[x][y] == item) {
-						matches.add(item, x, y);
+			for (var xi = 0; xi < game.width; xi++) {
+				for (var yi = 0; yi < game.height; yi++) {
+					if (game.board[xi][yi] == item) {
+						matches.add(item, xi, yi);
 					}
 				}
 			}
 			
-			this.doMatch(matches, player, POWERUP_MATCH_ALL);
+			return true;
 			
 		}
 		
-		matchRow(y, player) {
-			var matches = new MatchArray();
+		matchRow(game, x, y, matches, player) {
 			
-			for (var x = 0; x < this.width; x++) {
-				matches.add(this.board[x][y], x, y);
+			for (var xi = 0; xi < game.width; xi++) {
+				matches.add(game.board[xi][y], xi, y);
 			}
 			
-			this.doMatch(matches, player, POWERUP_MATCH_ROW);
+			return true;
 			
 		}
 		
-		matchColumn(x, player) {
-			var matches = new MatchArray();
+		matchColumn(game, x, y, matches, player) {
 			
-			for (var y = 0; y < this.height; y++) {
-				matches.add(this.board[x][y], x, y);
+			for (var yi = 0; yi < game.height; yi++) {
+				matches.add(game.board[x][yi], x, yi);
 			}
 			
-			this.doMatch(matches, player, POWERUP_MATCH_COLUMN);
+			return true;
 			
 		}
 		

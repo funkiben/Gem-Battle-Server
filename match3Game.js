@@ -16,7 +16,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 	const DELETE_BOARD_ITEM	=			21; // 3 bytes: x, y, how (0=match)
 	const INITIALIZE_INV =				22; // 12 bytes: 1 byte for each slot, first 6 are thisPlayer, last 6 are otherPlayer
 	const CREATE_INV_ITEM = 			23; // 3 bytes: slot index, item id, 0=thisPlayer or 1=otherPlayer
-	const MOVE_ITEM_FAILED = 			24; // 2 bytes: x, y
+	const MOVE_ITEM_FAILED = 			24; // 3 bytes: x, y, match type
 	const OUT_OF_MATCHES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
 	
 	const NORMAL_MATCH =				0;
@@ -46,15 +46,18 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				}
 			}
 			
+			this.matchTypes = {};
+			this.matchTypes[NORMAL_MATCH] = this.normalMatch;
+			
 			var tryMoveItemListener1, tryMoveItemListener2;
 			var game = this;
 			
 			player1.messages.on("tryMoveItem", tryMoveItemListener1 = function(data) {
-				game.tryMoveItem(data.readInt8(0), data.readInt8(1), player1);
+				game.tryMoveItem(data.readInt8(0), data.readInt8(1), data.readInt8(2), player1);
 			});
 			
 			player2.messages.on("tryMoveItem", tryMoveItemListener2 = function(data) {
-				game.tryMoveItem(data.readInt8(0), data.readInt8(1), player2);
+				game.tryMoveItem(data.readInt8(0), data.readInt8(1), data.readInt8(2), player2);
 			});
 			
 			this.events.on("gameEnd", function() {
@@ -254,8 +257,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		
 		}
 	
-		moveItemFailed(x, y, player) {
-			var buf = messages.newMessage(MOVE_ITEM_FAILED, 2);
+		moveItemFailed(x, y, player, how) {
+			var buf = messages.newMessage(MOVE_ITEM_FAILED, 3);
 			
 			if (player == this.player1) {
 				buf.writeInt8(x, 2);
@@ -264,6 +267,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				buf.writeInt8(this.width - 1 - x, 2);
 				buf.writeInt8(this.height - 1 - y, 3);
 			}
+			
+			buf.writeInt8(how, 4)
 		
 			player.write(buf);
 		}
@@ -284,7 +289,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player2.write(buf2);
 		}
 	
-		tryMoveItem(x, y, player) {
+		tryMoveItem(x, y, how, player) {
 			if (this.turn != player) {
 				return;
 			}
@@ -295,20 +300,23 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			}
 			
 			var matches = new MatchArray();
-			var item = (player == this.player1 ? this.player1Inv[x] : this.player2Inv[x]);
 			
-			this.checkForMatches(x, y, item, matches);
-			
-			if (matches.length >= 3) {
+			if (this.matchTypes[how](this, x, y, matches, player)) {
 				
-				this.moveInvItemToBoard(x, y, player);
-				
-				this.doMatch(matches, player, NORMAL_MATCH);
+				this.events.emit("match", player, matches, how);
 			
-				this.deleteInvItem(x, player);
-				this.createInvItem(x, this.invItem(player), player);
+				for (var m in matches) {
+					this.deleteBoardItem(matches[m].x, matches[m].y, how);
+				}
 			
 				if (player == this.player1) {
+					this.fillDown();
+				} else {
+					this.fillUp();
+				}
+				
+				if (player == this.player1) {
+					
 					if (this.anyMatches(this.player2Inv)) {
 						this.setTurn(this.player2);
 					} else {
@@ -316,6 +324,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 					}
 				
 				} else {
+					
 					if (this.anyMatches(this.player1Inv)) {
 						this.setTurn(this.player1);
 					} else {
@@ -326,24 +335,28 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				
 			} else {
 			
-				this.moveItemFailed(x, y, player);
+				this.moveItemFailed(x, y, player, how);
 			
 			}
 		
 		}
 		
-		doMatch(matches, player, how) {
-			this.events.emit("match", player, matches, how);
+		normalMatch(game, x, y, matches, player) {
+			var item = (player == game.player1 ? game.player1Inv[x] : game.player2Inv[x]);
 			
-			for (var m in matches) {
-				this.deleteBoardItem(matches[m].x, matches[m].y, how);
+			game.checkForMatches(x, y, item, matches);
+			
+			if (matches.length < 3) {
+				return false;
 			}
 			
-			if (player == this.player1) {
-				this.fillDown();
-			} else {
-				this.fillUp();
-			}
+			game.moveInvItemToBoard(x, y, player);
+			
+			game.deleteInvItem(x, player);
+			game.createInvItem(x, game.invItem(player), player);
+			
+			return true;
+			
 		}
 	
 		checkForMatches(x, y, item, matches) {
