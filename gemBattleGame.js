@@ -64,6 +64,8 @@ const messages = require("./messages");
 			this.setDefense(this.player2, INIT_DEFENSE);
 			this.setLoot(this.player1, INIT_LOOT);
 			this.setLoot(this.player2, INIT_LOOT);
+			this.setEnergy(this.player1, INIT_ENERGY);
+			this.setEnergy(this.player2, INIT_ENERGY);
 			
 			this.player1.hearts = new Array();
 			this.player2.hearts = new Array();
