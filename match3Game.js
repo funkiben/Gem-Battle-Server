@@ -1,6 +1,8 @@
 const MatchArray = require("./matchArray");
 const Game = require("./game");
+const messages = require("./messages");
 
+messages.labelRegistry[4] = 'tryMoveItem';
 
 (function() {
 

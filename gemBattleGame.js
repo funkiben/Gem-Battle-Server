@@ -1,5 +1,6 @@
 const MatchArray = require("./matchArray");
 const Match3Game = require("./match3Game");
+const messages = require("./messages");
 
 (function() {
 
