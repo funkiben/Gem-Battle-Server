@@ -43,8 +43,8 @@ const Match3Game = require("./match3Game");
 	
 	const POWERUP_HAMMER_SMASH = 1;
 	const POWERUP_MATCH_ALL = 2;
-	const POWERUP_MATCH_ROW = 2;
-	const POWERUP_MATCH_COLUMN = 2;
+	const POWERUP_MATCH_ROW = 3;
+	const POWERUP_MATCH_COLUMN = 4;
 	
 	class GemBattleGame extends Match3Game {
 		constructor(player1, player2) {
