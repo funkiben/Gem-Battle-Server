@@ -33,7 +33,7 @@ const messages = require("./messages");
 	
 	const MAX_HEALTH = 100;
 	const MAX_DEFENSE = 80;
-	const MAX_ENERGY = 40;
+	const MAX_ENERGY = 15;
 	
 	const HEART_REGEN_TURNS = 3;
 	const HEART_REGEN_AMOUNT = 1;
@@ -222,8 +222,10 @@ const messages = require("./messages");
 				
 				if (player == this.player1) {
 					this.gameWon(this.player2);
+					console.log(this.player2.name + " beat " + this.player1.name);
 				} else {
 					this.gameWon(this.player1);
+					console.log(this.player1.name + " beat " + this.player2.name);
 				}
 				
 			}
@@ -348,6 +350,8 @@ const messages = require("./messages");
 				}
 			}
 			
+			game.setEnergy(player, 0);
+			
 			return true;
 			
 		}
@@ -362,6 +366,8 @@ const messages = require("./messages");
 				matches.add(game.board[xi][y], xi, y);
 			}
 			
+			game.setEnergy(player, 0);
+			
 			return true;
 			
 		}
@@ -375,6 +381,8 @@ const messages = require("./messages");
 			for (var yi = 0; yi < game.height; yi++) {
 				matches.add(game.board[x][yi], x, yi);
 			}
+			
+			game.setEnergy(player, 0);
 			
 			return true;
 			

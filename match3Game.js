@@ -40,11 +40,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				this.board[i] = new Array(this.height);
 			}
 		
-			for (var x = 0; x < this.width; x++) {
-				for (var y = 0; y < this.height; y++) {
-					this.board[x][y] = this.boardItem(x, y);
-				}
-			}
+			this.randomizeBoard();
 			
 			this.matchTypes = {};
 			this.matchTypes[NORMAL_MATCH] = this.normalMatch;
@@ -76,6 +72,14 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		
 		boardItem(x, y) {
 			return Math.floor(Math.random() * 6);
+		}
+	
+		randomizeBoard() {
+			for (var x = 0; x < this.width; x++) {
+				for (var y = 0; y < this.height; y++) {
+					this.board[x][y] = this.boardItem(x, y);
+				}
+			}
 		}
 	
 		initializeBoard() {
@@ -315,23 +319,38 @@ messages.labelRegistry[4] = 'tryMoveItem';
 					this.fillUp();
 				}
 				
+				while (!this.anyMatches(this.player2Inv) && !this.anyMatches(this.player1Inv)) {
+					this.randomizeBoard();
+				}
+				
 				if (player == this.player1) {
 					
 					if (this.anyMatches(this.player2Inv)) {
+						
 						this.setTurn(this.player2);
+						
 					} else {
+						
 						this.outOfMatches(this.player2);
+						
 					}
 				
 				} else {
 					
 					if (this.anyMatches(this.player1Inv)) {
+						
 						this.setTurn(this.player1);
+						
 					} else {
+						
 						this.outOfMatches(this.player1);
+						
 					}
 				
 				}
+				
+				
+				
 				
 			} else {
 			
