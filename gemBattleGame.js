@@ -199,6 +199,10 @@ const messages = require("./messages");
 				value = MAX_HEALTH;
 			}
 			
+			if (player.health == value) {
+				return;
+			}
+			
 			player.health = value;
 		
 			var buf1 = messages.newMessage(SET_HEALTH, 3);
@@ -236,6 +240,10 @@ const messages = require("./messages");
 				value = MAX_DEFENSE;
 			}
 			
+			if (player.defense == value) {
+				return;
+			}
+			
 			player.defense = value;
 		
 			var buf1 = messages.newMessage(SET_DEFENSE, 3);
@@ -259,6 +267,10 @@ const messages = require("./messages");
 		setEnergy(player, value) {
 			if (value > MAX_ENERGY) {
 				value = MAX_ENERGY;
+			}
+			
+			if (player.energy == value) {
+				return;
 			}
 			
 			player.energy = value;
