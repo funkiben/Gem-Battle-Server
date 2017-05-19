@@ -74,12 +74,13 @@ const messages = require("./messages");
 			
 			this.events.on("newTurn", function(player) {
 				for (var i = player.hearts.length - 1; i >= 0; i--) {
-					player.hearts[i] = player.hearts[i] - 1;
+					player.hearts[i]--;
 					game.setHealth(player, player.health + HEART_REGEN_AMOUNT);
 					
 					if (player.hearts[i] == 0) {
 						player.hearts.splice(i, 1);
 					}
+					
 				}
 			});
 			
@@ -89,27 +90,35 @@ const messages = require("./messages");
 					heartCount = matches.count(HEART), 
 					shieldCount = matches.count(SHIELD), 
 					starCount = matches.count(STAR), 
-					swordCount = matches.count(SWORD)
+					swordCount = matches.count(SWORD);
 				
 				if (gemCount > 0) {
 					
 					game.setLoot(player, player.loot + gemCount * GEM_LOOT);
 					
-				} else if (heartCount > 0) {
+				}
+				
+				if (heartCount > 0) {
 					
 					for (var i = 0; i < heartCount; i++) {
 						player.hearts.push(HEART_REGEN_TURNS);
 					}
 					
-				} else if (shieldCount > 0) {
+				}
+				
+				if (shieldCount > 0) {
 					
 					game.setDefense(player, player.defense + shieldCount * SHIELD_DEFENSE);
 					
-				} else if (starCount > 0) {
+				}
+				
+				if (starCount > 0) {
 					
 					game.setEnergy(player, player.energy + starCount * STAR_ENERGY);
 					
-				} else if (swordCount > 0) {
+				} 
+				
+				if (swordCount > 0) {
 					
 					game.attack(player == game.player1 ? game.player2 : game.player1, swordCount * SWORD_ATTACK);
 					
@@ -316,6 +325,8 @@ const messages = require("./messages");
 					matches.push(game.board[xi][yi], xi, yi);
 				}
 			}
+			
+			game.setEnergy(player, 0);
 			
 			return true;
 			
