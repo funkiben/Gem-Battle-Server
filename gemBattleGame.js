@@ -11,20 +11,18 @@ const messages = require("./messages");
 	const ATTACKED =					33; // 5 bytes: 2 bytes total attack amount, 2 bytes damage to health, last byte 0=thisPlayer or 1=otherPlayer
 	const GAME_PROPERTIES =				34; // 6 bytes: 2 bytes max health, 2 bytes max defense, 2 bytes max energy
 	
-	const POT = 0;
-	const GEM = 1;
-	const HEART = 2;
-	const SHIELD = 3;
-	const STAR  = 4;
-	const SWORD = 5;
+	const GEM = 0;
+	const HEART = 1;
+	const SHIELD = 2;
+	const STAR  = 3;
+	const SWORD = 4;
 	
-	const POT_BIAS = 1;
 	const GEM_BIAS = 1.5;
 	const HEART_BIAS = 1.5;
 	const SHIELD_BIAS = 2;
 	const STAR_BIAS  = 1.5;
 	const SWORD_BIAS = 2;
-	const BIAS_COMBINED = POT_BIAS + GEM_BIAS + HEART_BIAS + SHIELD_BIAS + SWORD_BIAS + STAR_BIAS;
+	const BIAS_COMBINED = GEM_BIAS + HEART_BIAS + SHIELD_BIAS + SWORD_BIAS + STAR_BIAS;
 	
 	const INIT_LOOT = 0;
 	const INIT_HEALTH = 80;
@@ -143,9 +141,7 @@ const messages = require("./messages");
 			
 			var test;
 			
-			if (val < (test = POT_BIAS)) {
-				return POT;
-			} else if (val < (test += GEM_BIAS)) {
+			if (val < (test = GEM_BIAS)) {
 				return GEM;
 			} else if (val < (test += HEART_BIAS)) {
 				return HEART;
