@@ -72,6 +72,10 @@ const messages = require("./messages");
 			var game = this;
 			
 			this.events.on("newTurn", function(player) {
+				if (player.health == 0) {
+					return;
+				}
+
 				for (var i = player.hearts.length - 1; i >= 0; i--) {
 					player.hearts[i]--;
 					game.setHealth(player, player.health + HEART_REGEN_AMOUNT);
