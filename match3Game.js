@@ -77,9 +77,12 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		randomizeBoard() {
 			for (var x = 0; x < this.width; x++) {
 				for (var y = 0; y < this.height; y++) {
+					this.deleteBoardItem(x, y, 0);
 					this.board[x][y] = this.boardItem(x, y);
 				}
 			}
+
+			this.initializeBoard();
 		}
 	
 		initializeBoard() {
