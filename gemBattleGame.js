@@ -157,11 +157,17 @@ const messages = require("./messages");
 		}
 		
 		gameProperties() {
-			var buf = messages.newMessage(GAME_PROPERTIES, 6);
+			var buf = messages.newMessage(GAME_PROPERTIES, 18);
 			
 			buf.writeUInt16LE(MAX_HEALTH, 2);
 			buf.writeUInt16LE(MAX_DEFENSE, 4);
 			buf.writeUInt16LE(MAX_ENERGY, 6);
+			buf.writeUInt16LE(HEART_REGEN_AMOUNT, 8);
+			buf.writeUInt16LE(HEART_REGEN_TURNS, 10);
+			buf.writeUInt16LE(SWORD_ATTACK, 12);
+			buf.writeUInt16LE(SHIELD_DEFENSE, 14);
+			buf.writeUInt16LE(GEM_LOOT, 16);
+			buf.writeUInt16LE(STAR_ENERGY, 18);
 			
 			this.player1.write(buf);
 			this.player2.write(buf);
