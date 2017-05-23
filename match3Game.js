@@ -77,12 +77,9 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		randomizeBoard() {
 			for (var x = 0; x < this.width; x++) {
 				for (var y = 0; y < this.height; y++) {
-					this.deleteBoardItem(x, y, 0);
 					this.board[x][y] = this.boardItem(x, y);
 				}
 			}
-
-			this.initializeBoard();
 		}
 	
 		initializeBoard() {
@@ -323,7 +320,15 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				}
 				
 				while (!this.anyMatches(this.player2Inv) && !this.anyMatches(this.player1Inv)) {
+					for (var y = 0; y < this.height; y++) {
+						for (var x = 0; x < this.width; x++) {
+							this.deleteBoardItem(x, y, NORMAL_MATCH);
+						}
+					}
+
 					this.randomizeBoard();
+
+					this.initializeBoard();
 				}
 				
 				if (player == this.player1) {
