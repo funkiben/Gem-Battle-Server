@@ -18,7 +18,7 @@ const messages = require("./messages");
 	const STAR  = 3;
 	const SWORD = 4;
 	
-	const GEM_BIAS = 1.5;
+	const GEM_BIAS = 1;
 	const HEART_BIAS = 1.5;
 	const SHIELD_BIAS = 2;
 	const STAR_BIAS  = 1.5;
@@ -32,14 +32,14 @@ const messages = require("./messages");
 	
 	const MAX_HEALTH = 100;
 	const MAX_DEFENSE = 80;
-	const MAX_ENERGY = 15;
+	const MAX_ENERGY = 16;
 	
 	const HEART_REGEN_TURNS = 3;
 	const HEART_REGEN_AMOUNT = 1;
-	const SWORD_ATTACK= 4;
-	const SHIELD_DEFENSE = 2;
+	const SWORD_ATTACK= 5;
+	const SHIELD_DEFENSE = 1;
 	const GEM_LOOT = 1;
-	const STAR_ENERGY = 1;
+	const STAR_ENERGY = 2;
 	
 	const HAMMER_SMASH = 1;
 	const MATCH_ALL = 2;
