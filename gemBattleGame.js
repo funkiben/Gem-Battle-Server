@@ -373,8 +373,8 @@ const messages = require("./messages");
 				return false;
 			}
 			
-			for (var xi = Math.max(x - 1, 0); xi <= Math.min(x + 1, game.width); xi++) {
-				for (var yi = Math.max(y - 1, 0); yi <= Math.min(y + 1, game.height); yi++) {
+			for (var xi = Math.max(x - 1, 0); xi <= Math.min(x + 1, game.width - 1); xi++) {
+				for (var yi = Math.max(y - 1, 0); yi <= Math.min(y + 1, game.height - 1); yi++) {
 					matches.push(game.board[xi][yi], xi, yi);
 				}
 			}
