@@ -68,6 +68,9 @@ const messages = require("./messages");
 			
 			this.player1.hearts = new Array();
 			this.player2.hearts = new Array();
+
+			this.healthAfterRegen(this.player1);
+			this.healthAfterRegen(this.player2);
 			
 			var game = this;
 			
