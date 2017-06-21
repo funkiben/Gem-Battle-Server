@@ -1,4 +1,4 @@
-const MatchArray = require("./matchArray");
+const ItemArray = require("./itemArray");
 const Game = require("./game");
 const messages = require("./messages");
 
@@ -9,11 +9,14 @@ messages.labelRegistry[4] = 'tryMoveItem';
 
 	// messages server sends to clients
 	const INITIALIZE_BOARD = 			16; // 36 bytes: 1 byte for each slot
-	const MOVE_BOARD_ITEM = 	 		17; // 4 bytes: xold, yold, xnew, ynew
+	//const MOVE_BOARD_ITEM = 	 		17; // 4 bytes: xold, yold, xnew, ynew
+	const MOVE_BOARD_ITEM = 	 		17; // 16 bit sequences, 4 bits for fromX, 4 bits for fromY, 4 bits for toX, 4 bits for toY
 	const DELETE_INV_ITEM =  			18; // 2 bytes: slot index, 0=thisPlayer or 1=otherPlayer
-	const CREATE_BOARD_ITEM =  			19; // 4 bytes: x, y, item id, 0=thisPlayer or 1=otherPlayer
+	//const CREATE_BOARD_ITEM =  		19; // 4 bytes: x, y, item id, 0=thisPlayer or 1=otherPlayer
+	const CREATE_BOARD_ITEM =  			19; // 1st byte 0=thisPlayer, 1=otherPlayer, 16 bit sequences, 4 bits for x, 4 bits for y, 8 bits for itemID
 	const MOVE_INV_ITEM_TO_BOARD =  	20; // 3 bytes: x, y, 0=thisPlayer or 1=otherPlayer
-	const DELETE_BOARD_ITEM	=			21; // 3 bytes: x, y, how (0=match)
+	//const DELETE_BOARD_ITEM	=		21; // 3 bytes: x, y, how (0=normal match)
+	const DELETE_BOARD_ITEM	=			21; // 3 bytes: 1st byte how (0 = normal match), each byte after: 4 bits for x, 4 bits for y
 	const INITIALIZE_INV =				22; // 12 bytes: 1 byte for each slot, first 6 are thisPlayer, last 6 are otherPlayer
 	const CREATE_INV_ITEM = 			23; // 3 bytes: slot index, item id, 0=thisPlayer or 1=otherPlayer
 	const MOVE_ITEM_FAILED = 			24; // 3 bytes: x, y, match type
@@ -100,7 +103,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player2.write(buf2);
 			
 		}
-	
+		
+		/*
 		moveBoardItem(x1, y1, x2, y2) {
 			var buf1 = messages.newMessage(MOVE_BOARD_ITEM, 4);
 			var buf2 = messages.newMessage(MOVE_BOARD_ITEM, 4);
@@ -118,6 +122,41 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			buf2.writeInt8(this.width - 1 - x2, 4);
 			buf2.writeInt8(this.height - 1 - y2, 5);
 			
+			this.player1.write(buf1);
+			this.player2.write(buf2);
+		}
+		*/
+
+		moveBoardItems(moveCoordinates) {
+			var buf1 = messages.newMessage(MOVE_BOARD_ITEM, moveCoordinates.length * 2);
+			var buf2 = messages.newMessage(MOVE_BOARD_ITEM, moveCoordinates.length * 2);
+			
+			var pos = 2, toX, toY, fromX, fromY;
+
+			for (var i in moveCoordinates) {
+				
+				toX = moveCoordinates[i].toX;
+				toY = moveCoordinates[i].toY;
+				fromX = moveCoordinates[i].fromX;
+				fromY = moveCoordinates[i].fromY;
+
+				this.board[toX][toY] = this.board[fromX][fromY];
+				this.board[fromX][fromY] = null;
+				
+				buf1.writeInt8(((fromX & 0xF) << 4) | (fromY & 0xF), pos);
+				buf1.writeInt8(((toX & 0xF) << 4) | (toY & 0xF), pos + 1);
+				
+				toX = this.width - 1 - toX;
+				toY = this.height - 1 - toY;
+				fromX = this.width - 1 - fromX;
+				fromY = this.height - 1 - fromY;
+
+				buf2.writeInt8(((fromX & 0xF) << 4) | (fromY & 0xF), pos);
+				buf2.writeInt8(((toX & 0xF) << 4) | (toY & 0xF), pos + 1);
+				
+				pos += 2;
+			}
+
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		}
@@ -147,7 +186,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		
 		
 		}
-	
+		
+		/*
 		createBoardItem(x, y, itemID, player) {
 			var buf1 = messages.newMessage(CREATE_BOARD_ITEM, 4);
 			var buf2 = messages.newMessage(CREATE_BOARD_ITEM, 4);
@@ -175,6 +215,48 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player2.write(buf2);
 		
 		}
+		*/
+
+		createBoardItems(items, player) {
+			var buf1 = messages.newMessage(CREATE_BOARD_ITEM, items.length * 2 + 1);
+			var buf2 = messages.newMessage(CREATE_BOARD_ITEM, items.length * 2 + 1);
+			
+			if (this.player1 == player) {
+				buf1.writeInt8(0, 2);
+				buf2.writeInt8(1, 2);
+			} else {
+				buf2.writeInt8(0, 2);
+				buf1.writeInt8(1, 2);
+			
+			}
+
+			var x, y, item, pos = 3;
+
+			for (var i in items) {
+
+				x = items[i].x;
+				y = items[i].y;
+				item = items[i].item;
+
+				this.board[x][y] = item;
+				
+				buf1.writeInt8(((x & 0xF) << 4) | (y & 0xF), pos);
+				buf1.writeInt8(item, pos + 1);
+
+				x = this.width - 1 - x;
+				y = this.height - 1 - y;
+
+				buf2.writeInt8(((x & 0xF) << 4) | (y & 0xF), pos);
+				buf2.writeInt8(item, pos + 1);
+
+				pos += 2;
+
+			}
+
+			this.player1.write(buf1);
+			this.player2.write(buf2);
+			
+		}
 	
 		moveInvItemToBoard(x, y, player) {
 			var buf1 = messages.newMessage(MOVE_INV_ITEM_TO_BOARD, 3);
@@ -199,6 +281,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		
 		}
 	
+		/*
 		deleteBoardItem(x, y, how) {
 			var buf1 = messages.newMessage(DELETE_BOARD_ITEM, 3);
 			var buf2 = messages.newMessage(DELETE_BOARD_ITEM, 3);
@@ -213,6 +296,38 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			buf2.writeInt8(this.height - 1 - y, 3);
 			buf2.writeInt8(how, 4);
 			
+			this.player1.write(buf1);
+			this.player2.write(buf2);
+		}
+		*/
+
+		deleteBoardItems(coordinates, how) {
+			var buf1 = messages.newMessage(DELETE_BOARD_ITEM, coordinates.length + 1);
+			var buf2 = messages.newMessage(DELETE_BOARD_ITEM, coordinates.length + 1);
+			
+			buf1.writeInt8(how, 2);
+			buf2.writeInt8(how, 2);
+
+			var x, y, pos = 3;
+
+			for (var i in coordinates) {
+
+				x = coordinates[i].x;
+				y = coordinates[i].y;
+
+				this.board[x][y] = null;
+
+				buf1.writeInt8(((x & 0xF) << 4) | (y & 0xF), pos);
+
+				x = this.width - 1 - x;
+				y = this.height - 1 - y;
+
+				buf2.writeInt8(((x & 0xF) << 4) | (y & 0xF), pos);
+				
+				pos++;
+
+			}
+
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		}
@@ -303,16 +418,14 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				y = this.height - 1 - y;
 			}
 			
-			var matches = new MatchArray();
+			var items = new ItemArray();
 			
-			if (this.matchTypes[how](this, x, y, matches, player)) {
+			if (this.matchTypes[how](this, x, y, items, player)) {
 				
-				this.events.emit("match", player, matches, how);
+				this.events.emit("match", player, items, how);
 			
-				for (var m in matches) {
-					this.deleteBoardItem(matches[m].x, matches[m].y, how);
-				}
-			
+				this.deleteBoardItems(items, how);
+				
 				if (player == this.player1) {
 					this.fillDown();
 				} else {
@@ -320,11 +433,16 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				}
 				
 				while (!this.anyMatches(this.player2Inv) && !this.anyMatches(this.player1Inv)) {
+
+					var deleteCoords = new Array();
+
 					for (var y = 0; y < this.height; y++) {
 						for (var x = 0; x < this.width; x++) {
-							this.deleteBoardItem(x, y, NORMAL_MATCH);
+							deleteCoords.push({x:x, y:y});
 						}
 					}
+
+					this.deleteBoardItems(deleteCoords, NORMAL_MATCH);
 
 					this.randomizeBoard();
 
@@ -379,7 +497,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			
 			game.moveInvItemToBoard(x, y, player);
 			
-			game.deleteInvItem(x, player);
+			//game.deleteInvItem(x, player);
+			
 			game.createInvItem(x, game.invItem(player), player);
 			
 			return true;
@@ -427,7 +546,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			
 				for (var y = 0; y < this.height; y++) {
 				
-					matches = new MatchArray();
+					matches = new ItemArray();
 					this.checkForMatches(x, y, inv[x], matches);
 				
 					if (matches.length >= 3) {
@@ -444,7 +563,9 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		fillDown() {
 		
 			var ground;
-		
+			var moveCoordinates = new Array();
+			var itemsToCreate = new ItemArray();
+
 			for (var x = 0; x < this.width; x++) {
 			
 				ground = 0;
@@ -454,7 +575,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 					if (this.board[x][y] != null) {
 					
 						if (ground != y) {
-							this.moveBoardItem(x, y, x, ground);
+							//this.moveBoardItem(x, y, x, ground);
+							moveCoordinates.push({fromX:x, fromY:y, toX:x, toY:ground});
 						}
 						
 						ground++;
@@ -464,16 +586,21 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				}
 			
 				for (var i = ground; i < this.height; i++) {
-					this.createBoardItem(x, i, this.boardItem(this.player1), this.player1);
+					//this.createBoardItem(x, i, this.boardItem(this.player1), this.player1);
+					itemsToCreate.push(this.boardItem(this.player1), x, i);
 				}
 			
 			}
 			
+			this.moveBoardItems(moveCoordinates);
+			this.createBoardItems(itemsToCreate, this.player1);
 		}
 	
 		fillUp() {
 		
 			var ground;
+			var moveCoordinates = new Array();
+			var itemsToCreate = new ItemArray();
 		
 			for (var x = 0; x < this.width; x++) {
 			
@@ -484,7 +611,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 					if (this.board[x][y] != null) {
 					
 						if (ground != y) {
-							this.moveBoardItem(x, y, x, ground);
+							//this.moveBoardItem(x, y, x, ground);
+							moveCoordinates.push({fromX:x, fromY:y, toX:x, toY:ground});
 						}
 						
 						ground--;
@@ -494,10 +622,14 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				}
 			
 				for (var i = ground; i >= 0; i--) {
-					this.createBoardItem(x, i, this.boardItem(this.player2), this.player2);
+					//this.createBoardItem(x, i, this.boardItem(this.player2), this.player2);
+					itemsToCreate.push(this.boardItem(this.player2), x, i);
 				}
 			}
-		
+			
+			this.moveBoardItems(moveCoordinates);
+			this.createBoardItems(itemsToCreate, this.player2);
+
 		}
 	
 	

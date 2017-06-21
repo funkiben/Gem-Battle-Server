@@ -4,10 +4,6 @@ const EventEmitter = require("events");
 const messages = require("./messages");
 const GemBattleGame = require("./gemBattleGame");
 
-// messages server received from clients
-messages.labelRegistry[2] = 'setName';
-messages.labelRegistry[3] = 'leaveGame';
-
 var lookingForGame = null;
 
 

@@ -1,7 +1,7 @@
 
 (function() {
 	
-	class MatchArray extends Array {
+	class ItemArray extends Array {
 		
 		contains(x, y) {
 			for (var m in this) {
@@ -45,6 +45,6 @@
 	
 	}
 	
-	module.exports = MatchArray;
+	module.exports = ItemArray;
 	
 }());

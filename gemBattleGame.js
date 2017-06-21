@@ -1,4 +1,3 @@
-const MatchArray = require("./matchArray");
 const Match3Game = require("./match3Game");
 const messages = require("./messages");
 
@@ -9,7 +8,7 @@ const messages = require("./messages");
 	const SET_DEFENSE = 				29; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
 	const SET_ENERGY = 					32; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
 	const ATTACKED =					33; // 5 bytes: 2 bytes total attack amount, 2 bytes damage to health, last byte 0=thisPlayer or 1=otherPlayer
-	const GAME_PROPERTIES =				34; // 18 bytes: 2 bytes max health, 2 bytes max defense, 2 bytes max energy, 2 bytes health regen amount, 2 bytes health regen turns, 2 bytes sword attack, 2 bytes shield defense, 2 bytes gem loot, 2 bytes star energy
+	const GAME_PROPERTIES =				34; // 18 bytes: 2 bytes max health, 2 bytes max defense, 2 bytes max energy, 2 bytes heart regen amount, 2 bytes heart regen turns, 2 bytes sword attack, 2 bytes shield defense, 2 bytes gem loot, 2 bytes star energy
 	const HEALTH_AFTER_REGEN = 			35; // 3 bytes: 2 bytes is value, last byte 0=thisPlayer or 1=otherPlayer
 
 	const GEM = 0;

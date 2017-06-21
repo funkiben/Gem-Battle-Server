@@ -1,6 +1,9 @@
 messages = require("./messages.js");
 EventEmitter = require("events");
 
+messages.labelRegistry[2] = 'setName';
+messages.labelRegistry[3] = 'leaveGame';
+
 (function() {
 
 
