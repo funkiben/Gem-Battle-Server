@@ -37,13 +37,12 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player2Inv = new Array(this.width);
 		
 			for (var i = 0; i < 6; i++) {
-				this.player1Inv[i] = this.invItem(this.player1);
-				this.player2Inv[i] = this.invItem(this.player2);
-				
 				this.board[i] = new Array(this.height);
 			}
 		
 			this.randomizeBoard();
+			this.randomizeInv(this.player1Inv, this.player1);
+			this.randomizeInv(this.player2Inv, this.player2);
 			
 			this.matchTypes = {};
 			this.matchTypes[NORMAL_MATCH] = this.normalMatch;
@@ -65,7 +64,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			});
 			
 			this.initializeBoard();
-			this.initializeInv();
+			this.initializeInvs();
 		
 		}
 		
@@ -82,6 +81,12 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				for (var y = 0; y < this.height; y++) {
 					this.board[x][y] = this.boardItem(x, y);
 				}
+			}
+		}
+
+		randomizeInv(inv, player) {
+			for (var slot = 0; slot < this.width; slot++) {
+				inv[slot] = this.invItem(slot, player);
 			}
 		}
 	
@@ -160,7 +165,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		}
-	
+		
+		/*
 		deleteInvItem(slot, player) {
 			var buf1 = messages.newMessage(DELETE_INV_ITEM, 2);
 			var buf2 = messages.newMessage(DELETE_INV_ITEM, 2);
@@ -183,8 +189,43 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		
 			this.player1.write(buf1);
 			this.player2.write(buf2);
+			
+		}
+		*/
+
+		deleteInvItems(slots, player) {
+			var buf1 = messages.newMessage(DELETE_INV_ITEM, slots.length + 1);
+			var buf2 = messages.newMessage(DELETE_INV_ITEM, slots.length + 1);
+			
+			if (player == this.player1) {
+				buf1.writeInt8(0, 2);
+				buf2.writeInt8(1, 2);
+			
+			} else {
+				buf2.writeInt8(0, 2);
+				buf1.writeInt8(1, 2);
+			}
+
+			var slot;
+
+			for (var i in slots) {
+
+				slot = slots[i];
+
+				if (player == this.player1) {
+					this.player1Inv[slot] = null;
+				} else {
+					this.player2Inv[slot] = null;
+				}
+
+				buf1.writeInt8(slot, i + 3);
+				buf2.writeInt8(this.width - 1 - slot, i + 3);
+
+			}
 		
-		
+			this.player1.write(buf1);
+			this.player2.write(buf2);
+			
 		}
 		
 		/*
@@ -332,7 +373,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player2.write(buf2);
 		}
 	
-		initializeInv(x, y) {
+		initializeInvs(x, y) {
 			var buf1 = messages.newMessage(INITIALIZE_INV, 12);
 			var buf2 = messages.newMessage(INITIALIZE_INV, 12);
 		
@@ -347,7 +388,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		}
-	
+		
+		/*
 		createInvItem(slot, itemID, player) {
 			var buf1 = messages.newMessage(CREATE_INV_ITEM, 3);
 			var buf2 = messages.newMessage(CREATE_INV_ITEM, 3);
@@ -371,6 +413,52 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				buf1.writeInt8(1, 4);
 			}
 		
+			this.player1.write(buf1);
+			this.player2.write(buf2);
+		
+		}
+		*/
+
+		createInvItem(slot, item, player) {
+			this.createInvItems([ { slot:slot, item:item } ], player);
+		}
+
+		createInvItems(items, player) {
+			var buf1 = messages.newMessage(CREATE_INV_ITEM, items.length + 1);
+			var buf2 = messages.newMessage(CREATE_INV_ITEM, items.length + 1);
+			
+			if (player == this.player1) {
+				buf1.writeInt8(0, 2);
+				buf2.writeInt8(1, 2);
+			
+			} else {
+				buf2.writeInt8(0, 2);
+				buf1.writeInt8(1, 2);
+			}
+
+			var item, slot, pos = 3;
+
+			for (var i in items) {
+
+				item = items[i].item;
+				slot = items[i].slot;
+
+				if (player == this.player1) {
+					this.player1Inv[slot] = item;
+				} else {
+					this.player2Inv[slot] = item;
+				}
+
+				buf1.writeInt8(((slot & 0xF) << 4) | (item & 0xF), pos);
+				
+				slot = this.width - 1 - slot;
+
+				buf2.writeInt8(((slot & 0xF) << 4) | (item & 0xF), pos);
+				
+				pos++;
+				
+			}
+
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		
@@ -407,6 +495,20 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		}
+
+		reInitializeBoard() {
+			var deleteCoords = new Array();
+
+			for (var y = 0; y < this.height; y++) {
+				for (var x = 0; x < this.width; x++) {
+					deleteCoords.push({x:x, y:y});
+				}
+			}
+
+			this.deleteBoardItems(deleteCoords, NORMAL_MATCH);
+
+			this.initializeBoard();
+		}
 	
 		tryMoveItem(x, y, how, player) {
 			if (this.turn != player) {
@@ -432,21 +534,18 @@ messages.labelRegistry[4] = 'tryMoveItem';
 					this.fillUp();
 				}
 				
+				var reInit = false;
+
 				while (!this.anyMatches(this.player2Inv) && !this.anyMatches(this.player1Inv)) {
-
-					var deleteCoords = new Array();
-
-					for (var y = 0; y < this.height; y++) {
-						for (var x = 0; x < this.width; x++) {
-							deleteCoords.push({x:x, y:y});
-						}
-					}
-
-					this.deleteBoardItems(deleteCoords, NORMAL_MATCH);
 
 					this.randomizeBoard();
 
-					this.initializeBoard();
+					reInit = true;
+
+				}
+
+				if (reInit) {
+					reInitializeBoard();
 				}
 				
 				if (player == this.player1) {
@@ -496,8 +595,6 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			}
 			
 			game.moveInvItemToBoard(x, y, player);
-			
-			//game.deleteInvItem(x, player);
 			
 			game.createInvItem(x, game.invItem(player), player);
 			
