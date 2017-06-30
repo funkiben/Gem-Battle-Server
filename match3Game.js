@@ -9,16 +9,13 @@ messages.labelRegistry[4] = 'tryMoveItem';
 
 	// messages server sends to clients
 	const INITIALIZE_BOARD = 			16; // 36 bytes: 1 byte for each slot
-	//const MOVE_BOARD_ITEM = 	 		17; // 4 bytes: xold, yold, xnew, ynew
-	const MOVE_BOARD_ITEM = 	 		17; // 16 bit sequences, 4 bits for fromX, 4 bits for fromY, 4 bits for toX, 4 bits for toY
-	const DELETE_INV_ITEM =  			18; // 2 bytes: slot index, 0=thisPlayer or 1=otherPlayer
-	//const CREATE_BOARD_ITEM =  		19; // 4 bytes: x, y, item id, 0=thisPlayer or 1=otherPlayer
-	const CREATE_BOARD_ITEM =  			19; // 1st byte 0=thisPlayer, 1=otherPlayer, 16 bit sequences, 4 bits for x, 4 bits for y, 8 bits for itemID
+	const MOVE_BOARD_ITEMS = 	 		17; // 16 bit sequences, 4 bits for fromX, 4 bits for fromY, 4 bits for toX, 4 bits for toY
+	const DELETE_INV_ITEMS =  			18; // 1st byte 0=thisPlayer or 1=otherPlayer, one byte for each slot after
+	const CREATE_BOARD_ITEMS =  		19; // 1st byte 0=thisPlayer, 1=otherPlayer, 16 bit sequences, 4 bits for x, 4 bits for y, 8 bits for itemID
 	const MOVE_INV_ITEM_TO_BOARD =  	20; // 3 bytes: x, y, 0=thisPlayer or 1=otherPlayer
-	//const DELETE_BOARD_ITEM	=		21; // 3 bytes: x, y, how (0=normal match)
-	const DELETE_BOARD_ITEM	=			21; // 3 bytes: 1st byte how (0 = normal match), each byte after: 4 bits for x, 4 bits for y
-	const INITIALIZE_INV =				22; // 12 bytes: 1 byte for each slot, first 6 are thisPlayer, last 6 are otherPlayer
-	const CREATE_INV_ITEM = 			23; // 3 bytes: slot index, item id, 0=thisPlayer or 1=otherPlayer
+	const DELETE_BOARD_ITEMS	=		21; // 1st byte how (0 = normal match), each byte after: 4 bits for x, 4 bits for y
+	const INITIALIZE_INVS =				22; // 12 bytes: 1 byte for each slot, first 6 are thisPlayer, last 6 are otherPlayer
+	const CREATE_INV_ITEMS = 			23; // 1st byte 0=thisPlayer or 1=otherPlayer: 8 bit sequences: 4 bits item, 4 bits slot
 	const MOVE_ITEM_FAILED = 			24; // 3 bytes: x, y, match type
 	const OUT_OF_MATCHES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
 	
@@ -108,33 +105,10 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player2.write(buf2);
 			
 		}
-		
-		/*
-		moveBoardItem(x1, y1, x2, y2) {
-			var buf1 = messages.newMessage(MOVE_BOARD_ITEM, 4);
-			var buf2 = messages.newMessage(MOVE_BOARD_ITEM, 4);
-			
-			this.board[x2][y2] = this.board[x1][y1];
-			this.board[x1][y1] = null;
-		
-			buf1.writeInt8(x1, 2);
-			buf1.writeInt8(y1, 3);
-			buf1.writeInt8(x2, 4);
-			buf1.writeInt8(y2, 5);
-			
-			buf2.writeInt8(this.width - 1 - x1, 2);
-			buf2.writeInt8(this.height - 1 - y1, 3);
-			buf2.writeInt8(this.width - 1 - x2, 4);
-			buf2.writeInt8(this.height - 1 - y2, 5);
-			
-			this.player1.write(buf1);
-			this.player2.write(buf2);
-		}
-		*/
 
 		moveBoardItems(moveCoordinates) {
-			var buf1 = messages.newMessage(MOVE_BOARD_ITEM, moveCoordinates.length * 2);
-			var buf2 = messages.newMessage(MOVE_BOARD_ITEM, moveCoordinates.length * 2);
+			var buf1 = messages.newMessage(MOVE_BOARD_ITEMS, moveCoordinates.length * 2);
+			var buf2 = messages.newMessage(MOVE_BOARD_ITEMS, moveCoordinates.length * 2);
 			
 			var pos = 2, toX, toY, fromX, fromY;
 
@@ -165,37 +139,10 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		}
-		
-		/*
-		deleteInvItem(slot, player) {
-			var buf1 = messages.newMessage(DELETE_INV_ITEM, 2);
-			var buf2 = messages.newMessage(DELETE_INV_ITEM, 2);
-		
-			buf1.writeInt8(slot, 2);
-			buf2.writeInt8(this.width - 1 - slot, 2);
-		
-			if (player == this.player1) {
-				this.player1Inv[slot] = null;
-			
-				buf1.writeInt8(0, 3);
-				buf2.writeInt8(1, 3);
-			
-			} else {
-				this.player2Inv[slot] = null;
-			
-				buf2.writeInt8(0, 3);
-				buf1.writeInt8(1, 3);
-			}
-		
-			this.player1.write(buf1);
-			this.player2.write(buf2);
-			
-		}
-		*/
 
 		deleteInvItems(slots, player) {
-			var buf1 = messages.newMessage(DELETE_INV_ITEM, slots.length + 1);
-			var buf2 = messages.newMessage(DELETE_INV_ITEM, slots.length + 1);
+			var buf1 = messages.newMessage(DELETE_INV_ITEMS, slots.length + 1);
+			var buf2 = messages.newMessage(DELETE_INV_ITEMS, slots.length + 1);
 			
 			if (player == this.player1) {
 				buf1.writeInt8(0, 2);
@@ -227,40 +174,10 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player2.write(buf2);
 			
 		}
-		
-		/*
-		createBoardItem(x, y, itemID, player) {
-			var buf1 = messages.newMessage(CREATE_BOARD_ITEM, 4);
-			var buf2 = messages.newMessage(CREATE_BOARD_ITEM, 4);
-		
-			this.board[x][y] = itemID;
-		
-			buf1.writeInt8(x, 2);
-			buf1.writeInt8(y, 3);
-			buf1.writeInt8(itemID, 4);
-		
-			buf2.writeInt8(this.width - 1 - x, 2);
-			buf2.writeInt8(this.height - 1 - y, 3);
-			buf2.writeInt8(itemID, 4);
-		
-			if (this.player1 == player) {
-				buf1.writeInt8(0, 5);
-				buf2.writeInt8(1, 5);
-			} else {
-				buf2.writeInt8(0, 5);
-				buf1.writeInt8(1, 5);
-			
-			}
-		
-			this.player1.write(buf1);
-			this.player2.write(buf2);
-		
-		}
-		*/
 
 		createBoardItems(items, player) {
-			var buf1 = messages.newMessage(CREATE_BOARD_ITEM, items.length * 2 + 1);
-			var buf2 = messages.newMessage(CREATE_BOARD_ITEM, items.length * 2 + 1);
+			var buf1 = messages.newMessage(CREATE_BOARD_ITEMS, items.length * 2 + 1);
+			var buf2 = messages.newMessage(CREATE_BOARD_ITEMS, items.length * 2 + 1);
 			
 			if (this.player1 == player) {
 				buf1.writeInt8(0, 2);
@@ -321,30 +238,10 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player2.write(buf2);
 		
 		}
-	
-		/*
-		deleteBoardItem(x, y, how) {
-			var buf1 = messages.newMessage(DELETE_BOARD_ITEM, 3);
-			var buf2 = messages.newMessage(DELETE_BOARD_ITEM, 3);
-		
-			this.board[x][y] = null;
-		
-			buf1.writeInt8(x, 2);
-			buf1.writeInt8(y, 3);
-			buf1.writeInt8(how, 4);
-			
-			buf2.writeInt8(this.width - 1 - x, 2);
-			buf2.writeInt8(this.height - 1 - y, 3);
-			buf2.writeInt8(how, 4);
-			
-			this.player1.write(buf1);
-			this.player2.write(buf2);
-		}
-		*/
 
 		deleteBoardItems(coordinates, how) {
-			var buf1 = messages.newMessage(DELETE_BOARD_ITEM, coordinates.length + 1);
-			var buf2 = messages.newMessage(DELETE_BOARD_ITEM, coordinates.length + 1);
+			var buf1 = messages.newMessage(DELETE_BOARD_ITEMS, coordinates.length + 1);
+			var buf2 = messages.newMessage(DELETE_BOARD_ITEMS, coordinates.length + 1);
 			
 			buf1.writeInt8(how, 2);
 			buf2.writeInt8(how, 2);
@@ -374,8 +271,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		}
 	
 		initializeInvs(x, y) {
-			var buf1 = messages.newMessage(INITIALIZE_INV, 12);
-			var buf2 = messages.newMessage(INITIALIZE_INV, 12);
+			var buf1 = messages.newMessage(INITIALIZE_INVS, 12);
+			var buf2 = messages.newMessage(INITIALIZE_INVS, 12);
 		
 			for (var i = 0; i < this.width; i++) {
 				buf1.writeInt8(this.player1Inv[i], 2 + i);
@@ -388,44 +285,14 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 		}
-		
-		/*
-		createInvItem(slot, itemID, player) {
-			var buf1 = messages.newMessage(CREATE_INV_ITEM, 3);
-			var buf2 = messages.newMessage(CREATE_INV_ITEM, 3);
-		
-			buf1.writeInt8(slot, 2);
-			buf2.writeInt8(this.width - 1 - slot, 2);
-			
-			buf1.writeInt8(itemID, 3);
-			buf2.writeInt8(itemID, 3);
-			
-			if (player == this.player1) {
-				this.player1Inv[slot] = itemID;
-			
-				buf1.writeInt8(0, 4);
-				buf2.writeInt8(1, 4);
-			
-			} else {
-				this.player2Inv[slot] = itemID;
-			
-				buf2.writeInt8(0, 4);
-				buf1.writeInt8(1, 4);
-			}
-		
-			this.player1.write(buf1);
-			this.player2.write(buf2);
-		
-		}
-		*/
 
 		createInvItem(slot, item, player) {
 			this.createInvItems([ { slot:slot, item:item } ], player);
 		}
 
 		createInvItems(items, player) {
-			var buf1 = messages.newMessage(CREATE_INV_ITEM, items.length + 1);
-			var buf2 = messages.newMessage(CREATE_INV_ITEM, items.length + 1);
+			var buf1 = messages.newMessage(CREATE_INV_ITEMS, items.length + 1);
+			var buf2 = messages.newMessage(CREATE_INV_ITEMS, items.length + 1);
 			
 			if (player == this.player1) {
 				buf1.writeInt8(0, 2);
@@ -456,7 +323,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				buf2.writeInt8(((slot & 0xF) << 4) | (item & 0xF), pos);
 				
 				pos++;
-				
+
 			}
 
 			this.player1.write(buf1);
