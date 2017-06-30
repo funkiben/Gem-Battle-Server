@@ -455,6 +455,10 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		normalMatch(game, x, y, matches, player) {
 			var item = (player == game.player1 ? game.player1Inv[x] : game.player2Inv[x]);
 			
+			if (item == null) {
+				return false;
+			}
+
 			game.checkForMatches(x, y, item, matches);
 			
 			if (matches.length < 3) {
