@@ -17,7 +17,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 	const INITIALIZE_INVS =				22; // 12 bytes: 1 byte for each slot, first 6 are thisPlayer, last 6 are otherPlayer
 	const CREATE_INV_ITEMS = 			23; // 1st byte 0=thisPlayer or 1=otherPlayer: 8 bit sequences: 4 bits item, 4 bits slot
 	const MOVE_ITEM_FAILED = 			24; // 3 bytes: x, y, match type
-	const OUT_OF_MATCHES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
+	const OUT_OF_MOVES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
 	
 	const NORMAL_MATCH =				0;
 	
@@ -347,9 +347,9 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			player.write(buf);
 		}
 		
-		outOfMatches(player) {
-			var buf1 = messages.newMessage(OUT_OF_MATCHES, 1);
-			var buf2 = messages.newMessage(OUT_OF_MATCHES, 1);
+		outOfMoves(player) {
+			var buf1 = messages.newMessage(OUT_OF_MOVES, 1);
+			var buf2 = messages.newMessage(OUT_OF_MOVES, 1);
 		
 			if (player == this.player1) {
 				buf1.writeInt8(0, 2);
@@ -361,6 +361,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		
 			this.player1.write(buf1);
 			this.player2.write(buf2);
+
+			this.events.emit("outOfMoves", player);
 		}
 
 		reInitializeBoard() {
@@ -375,6 +377,20 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.deleteBoardItems(deleteCoords, NORMAL_MATCH);
 
 			this.initializeBoard();
+		}
+
+		refillInventory(inv, player) {
+
+			var items = new Array();
+
+			for (var slot = 0; slot < this.width; slot++) {
+				if (inv[slot] == null) {
+					items.push({slot:slot, item:this.invItem(slot, player)});
+				}
+			}
+
+			this.createInvItems(items, player);
+
 		}
 	
 		tryMoveItem(x, y, how, player) {
@@ -401,6 +417,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 					this.fillUp();
 				}
 				
+				/*
 				var reInit = false;
 
 				while (!this.anyMatches(this.player2Inv) && !this.anyMatches(this.player1Inv)) {
@@ -414,29 +431,52 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				if (reInit) {
 					reInitializeBoard();
 				}
+				*/
 				
 				if (player == this.player1) {
 					
+					/*
 					if (this.anyMatches(this.player2Inv)) {
 						
 						this.setTurn(this.player2);
 						
 					} else {
 						
-						this.outOfMatches(this.player2);
+						this.outOfMoves(this.player2);
 						
 					}
+					*/
+
+					if (!this.anyMatches(this.player1Inv)) {
+						this.outOfMoves(this.player1);
+						this.setTurn(this.player2);
+						this.refillInventory(this.player2Inv, this.player2);
+					} else {
+						this.setTurn(this.player1);
+					}
+
+
 				
 				} else {
 					
+					/*
 					if (this.anyMatches(this.player1Inv)) {
 						
 						this.setTurn(this.player1);
 						
 					} else {
 						
-						this.outOfMatches(this.player1);
+						this.outOfMoves(this.player1);
 						
+					}
+					*/
+
+					if (!this.anyMatches(this.player2Inv)) {
+						this.outOfMoves(this.player2);
+						this.setTurn(this.player1);
+						this.refillInventory(this.player1Inv, this.player1);
+					} else {
+						this.setTurn(this.player2);
 					}
 				
 				}
@@ -453,7 +493,8 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		}
 		
 		normalMatch(game, x, y, matches, player) {
-			var item = (player == game.player1 ? game.player1Inv[x] : game.player2Inv[x]);
+			var inv = player == game.player1 ? game.player1Inv : game.player2Inv;
+			var item = inv[x];
 			
 			if (item == null) {
 				return false;
@@ -465,9 +506,11 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				return false;
 			}
 			
+			inv[x] = null;
+
 			game.moveInvItemToBoard(x, y, player);
-			
-			game.createInvItem(x, game.invItem(player), player);
+
+			//game.createInvItem(x, game.invItem(player), player);
 			
 			return true;
 			
@@ -508,17 +551,23 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		}
 		
 		anyMatches(inv) {
-			var matches;
+			var matches, item;
 		
 			for (var x = 0; x < this.width; x++) {
 			
 				for (var y = 0; y < this.height; y++) {
 				
-					matches = new ItemArray();
-					this.checkForMatches(x, y, inv[x], matches);
-				
-					if (matches.length >= 3) {
-						return true;
+					item = inv[x];
+
+					if (item != null) {
+
+						matches = new ItemArray();
+						this.checkForMatches(x, y, item, matches);
+					
+						if (matches.length >= 3) {
+							return true;
+						}
+
 					}
 				
 				}

@@ -115,7 +115,7 @@ messages.labelRegistry[3] = 'leaveGame';
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 			
-			this.events.emit("newTurn", player);
+			this.events.emit("turn", player);
 		}
 	
 	}

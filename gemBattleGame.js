@@ -73,19 +73,9 @@ const messages = require("./messages");
 			
 			var game = this;
 			
-			this.events.on("newTurn", function(player) {
-				if (player.health == 0) {
-					return;
-				}
-
-				for (var i = player.hearts.length - 1; i >= 0; i--) {
-					player.hearts[i]--;
-					game.setHealth(player, player.health + HEART_REGEN_AMOUNT);
-					
-					if (player.hearts[i] == 0) {
-						player.hearts.splice(i, 1);
-					}
-				}
+			this.events.on("outOfMoves", function(player) {
+				game.regenHealth(game.player1);
+				game.regenHealth(game.player2);
 			});
 			
 			this.events.on("match", function(player, matches, how) {
@@ -367,6 +357,21 @@ const messages = require("./messages");
 			this.player2.write(buf2);
 
 			this.healthAfterRegen(player);
+		}
+
+		regenHealth(player) {
+			if (player.health == 0) {
+				return;
+			}
+
+			for (var i = player.hearts.length - 1; i >= 0; i--) {
+				player.hearts[i]--;
+				this.setHealth(player, player.health + HEART_REGEN_AMOUNT);
+				
+				if (player.hearts[i] == 0) {
+					player.hearts.splice(i, 1);
+				}
+			}
 		}
 		
 		hammerSmash(game, x, y, matches, player) {
