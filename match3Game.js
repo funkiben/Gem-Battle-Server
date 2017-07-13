@@ -434,18 +434,6 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				*/
 				
 				if (player == this.player1) {
-					
-					/*
-					if (this.anyMatches(this.player2Inv)) {
-						
-						this.setTurn(this.player2);
-						
-					} else {
-						
-						this.outOfMoves(this.player2);
-						
-					}
-					*/
 
 					if (!this.anyMatches(this.player1Inv)) {
 						this.outOfMoves(this.player1);
@@ -458,18 +446,6 @@ messages.labelRegistry[4] = 'tryMoveItem';
 
 				
 				} else {
-					
-					/*
-					if (this.anyMatches(this.player1Inv)) {
-						
-						this.setTurn(this.player1);
-						
-					} else {
-						
-						this.outOfMoves(this.player1);
-						
-					}
-					*/
 
 					if (!this.anyMatches(this.player2Inv)) {
 						this.outOfMoves(this.player2);
@@ -510,8 +486,6 @@ messages.labelRegistry[4] = 'tryMoveItem';
 
 			game.moveInvItemToBoard(x, y, player);
 
-			//game.createInvItem(x, game.invItem(player), player);
-			
 			return true;
 			
 		}
@@ -592,7 +566,6 @@ messages.labelRegistry[4] = 'tryMoveItem';
 					if (this.board[x][y] != null) {
 					
 						if (ground != y) {
-							//this.moveBoardItem(x, y, x, ground);
 							moveCoordinates.push({fromX:x, fromY:y, toX:x, toY:ground});
 						}
 						
@@ -603,7 +576,6 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				}
 			
 				for (var i = ground; i < this.height; i++) {
-					//this.createBoardItem(x, i, this.boardItem(this.player1), this.player1);
 					itemsToCreate.push(this.boardItem(this.player1), x, i);
 				}
 			
@@ -628,7 +600,6 @@ messages.labelRegistry[4] = 'tryMoveItem';
 					if (this.board[x][y] != null) {
 					
 						if (ground != y) {
-							//this.moveBoardItem(x, y, x, ground);
 							moveCoordinates.push({fromX:x, fromY:y, toX:x, toY:ground});
 						}
 						
@@ -639,7 +610,6 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				}
 			
 				for (var i = ground; i >= 0; i--) {
-					//this.createBoardItem(x, i, this.boardItem(this.player2), this.player2);
 					itemsToCreate.push(this.boardItem(this.player2), x, i);
 				}
 			}
