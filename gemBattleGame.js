@@ -8,15 +8,13 @@ const messages = require("./messages");
 	const SET_DEFENSE = 				29; // 4 bytes: 2 bytes is value, 1 byte for how, last byte 0=thisPlayer or 1=otherPlayer
 	const SET_ENERGY = 					32; // 4 bytes: 2 bytes is value, 1 byte for how, last byte 0=thisPlayer or 1=otherPlayer
 	const ATTACKED =					33; // 6 bytes: 2 bytes total attack amount, 2 bytes damage to health, 1 byte for how, last byte 0=thisPlayer or 1=otherPlayer
-	const GAME_PROPERTIES =				34; // 18 bytes: 2 bytes max health, 2 bytes max defense, 2 bytes max energy, 2 bytes heart regen amount, 2 bytes heart regen turns, 2 bytes sword attack, 2 bytes shield defense, 2 bytes gem loot, 2 bytes star energy
-	const HEALTH_AFTER_REGEN = 			35; // 4 bytes: 2 bytes is value, 1 byte for how, last byte 0=thisPlayer or 1=otherPlayer
-
+	const GAME_PROPERTIES =				34; // 16 bytes: 2 bytes max health, 2 bytes max defense, 2 bytes max energy, 2 bytes heart health, 2 bytes sword attack, 2 bytes shield defense, 2 bytes gem loot, 2 bytes star energy
+	
 	const SET_VALUE_REASON = {
 		NORMAL_MATCH: 0,
 		HAMMER_SMASH: 1,
 		INIT: 100,
-		HEALTH_REGEN: 101,
-		USE_SPECIAL: 102
+		USE_SPECIAL: 101
 	};
 
 	const GEM = 0;
@@ -33,21 +31,22 @@ const messages = require("./messages");
 	const BIAS_COMBINED = GEM_BIAS + HEART_BIAS + SHIELD_BIAS + SWORD_BIAS + STAR_BIAS;
 	
 	const INIT_LOOT = 0;
-	const INIT_HEALTH = 80;
+	const INIT_HEALTH = 800;
 	const INIT_DEFENSE = 40;
 	const INIT_ENERGY = 0;
 	
-	const MAX_HEALTH = 100;
+	const MAX_HEALTH = 1000;
 	const MAX_DEFENSE = 80;
 	const MAX_ENERGY = 16;
 	
-	const HEART_REGEN_TURNS = 3;
-	const HEART_REGEN_AMOUNT = 1;
-	const SWORD_ATTACK= 5;
-	const SHIELD_DEFENSE = 1;
+	const HEART_HEALTH = 30;
+	const SWORD_ATTACK = 50;
+	const SHIELD_DEFENSE = 4;
 	const GEM_LOOT = 1;
 	const STAR_ENERGY = 2;
 	
+	const ATTACK_SHIELD_DAMAGE_MODIFIER = 0.1;
+
 	const HAMMER_SMASH = 1;
 	const MATCH_ALL = 2;
 	const MATCH_ROW = 3;
@@ -76,16 +75,8 @@ const messages = require("./messages");
 			this.player1.hearts = new Array();
 			this.player2.hearts = new Array();
 
-			this.healthAfterRegen(this.player1, SET_VALUE_REASON.INIT);
-			this.healthAfterRegen(this.player2, SET_VALUE_REASON.INIT);
-			
 			var game = this;
-			
-			this.events.on("outOfMoves", function(player) {
-				game.regenHealth(game.player1);
-				game.regenHealth(game.player2);
-			});
-			
+
 			this.events.on("match", function(player, matches, how) {
 				
 				var gemCount = matches.count(GEM), 
@@ -102,11 +93,7 @@ const messages = require("./messages");
 				
 				if (heartCount > 0) {
 					
-					for (var i = 0; i < heartCount; i++) {
-						player.hearts.push(HEART_REGEN_TURNS);
-					}
-
-					game.healthAfterRegen(player, how);
+					game.setHealth(player, player.health + heartCount * HEART_HEALTH, how);
 					
 				}
 				
@@ -166,12 +153,11 @@ const messages = require("./messages");
 			buf.writeUInt16LE(MAX_HEALTH, 2);
 			buf.writeUInt16LE(MAX_DEFENSE, 4);
 			buf.writeUInt16LE(MAX_ENERGY, 6);
-			buf.writeUInt16LE(HEART_REGEN_AMOUNT, 8);
-			buf.writeUInt16LE(HEART_REGEN_TURNS, 10);
-			buf.writeUInt16LE(SWORD_ATTACK, 12);
-			buf.writeUInt16LE(SHIELD_DEFENSE, 14);
-			buf.writeUInt16LE(GEM_LOOT, 16);
-			buf.writeUInt16LE(STAR_ENERGY, 18);
+			buf.writeUInt16LE(HEART_HEALTH, 8);
+			buf.writeUInt16LE(SWORD_ATTACK, 10);
+			buf.writeUInt16LE(SHIELD_DEFENSE, 12);
+			buf.writeUInt16LE(GEM_LOOT, 14);
+			buf.writeUInt16LE(STAR_ENERGY, 16);
 			
 			this.player1.write(buf);
 			this.player2.write(buf);
@@ -248,42 +234,14 @@ const messages = require("./messages");
 				
 			}
 		}
-		
-		healthAfterRegen(player, how) {
-			var value = player.health;
-
-			for (var i in player.hearts) {
-				value += player.hearts[i] * HEART_REGEN_AMOUNT;
-			}
-
-			if (value > MAX_HEALTH) {
-				value = MAX_HEALTH;
-			}
-
-			var buf1 = messages.newMessage(HEALTH_AFTER_REGEN, 4);
-			var buf2 = messages.newMessage(HEALTH_AFTER_REGEN, 4);
-		
-			buf1.writeUInt16LE(value, 2);
-			buf2.writeUInt16LE(value, 2);
-			
-			buf1.writeInt8(how, 4);
-			buf2.writeInt8(how, 4);
-
-			if (player == this.player1) {
-				buf1.writeInt8(0, 5);
-				buf2.writeInt8(1, 5);
-			} else {
-				buf2.writeInt8(0, 5);
-				buf1.writeInt8(1, 5);
-			}
-		
-			this.player1.write(buf1);
-			this.player2.write(buf2);
-		}
 	
 		setDefense(player, value, how) {
 			if (value > MAX_DEFENSE) {
 				value = MAX_DEFENSE;
+			}
+
+			if (value < 0) {
+				value = 0;
 			}
 			
 			if (player.defense == value) {
@@ -347,18 +305,9 @@ const messages = require("./messages");
 		}
 		
 		attack(player, damage, how) {
-			var healthDamage;
-			
-			if (player.defense >= damage) {
-				healthDamage = 0;
-				this.setDefense(player, player.defense - damage, how);
-			}
-			
-			if (player.defense < damage) {
-				healthDamage = damage - player.defense;
-				this.setDefense(player, 0, how);
-				this.setHealth(player, player.health - healthDamage, how);
-			}
+			var healthDamage = damage * (1 - player.defense * 0.01);
+			this.setDefense(player, player.defense - damage * ATTACK_SHIELD_DAMAGE_MODIFIER, how);
+			this.setHealth(player, player.health - healthDamage, how);
 			
 			var buf1 = messages.newMessage(ATTACKED, 6);
 			var buf2 = messages.newMessage(ATTACKED, 6);
@@ -384,22 +333,6 @@ const messages = require("./messages");
 			this.player1.write(buf1);
 			this.player2.write(buf2);
 
-			this.healthAfterRegen(player, how);
-		}
-
-		regenHealth(player) {
-			if (player.health == 0) {
-				return;
-			}
-
-			for (var i = player.hearts.length - 1; i >= 0; i--) {
-				player.hearts[i]--;
-				this.setHealth(player, player.health + HEART_REGEN_AMOUNT, SET_VALUE_REASON.HEALTH_REGEN);
-				
-				if (player.hearts[i] == 0) {
-					player.hearts.splice(i, 1);
-				}
-			}
 		}
 		
 		hammerSmash(game, x, y, matches, player) {
