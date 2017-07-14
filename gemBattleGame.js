@@ -1,5 +1,6 @@
 const Match3Game = require("./match3Game");
 const messages = require("./messages");
+const ItemArray = require("./itemArray");
 
 (function() {
 
@@ -17,19 +18,23 @@ const messages = require("./messages");
 		USE_SPECIAL: 101
 	};
 
-	const GEM = 0;
-	const HEART = 1;
-	const SHIELD = 2;
-	const STAR  = 3;
-	const SWORD = 4;
-	
-	const GEM_BIAS = 1;
-	const HEART_BIAS = 1.5;
-	const SHIELD_BIAS = 2;
-	const STAR_BIAS  = 1.5;
-	const SWORD_BIAS = 2;
-	const BIAS_COMBINED = GEM_BIAS + HEART_BIAS + SHIELD_BIAS + SWORD_BIAS + STAR_BIAS;
-	
+	const ITEMS = {
+		GEM: 0,
+		HEART: 1,
+		SHIELD: 2,
+		STAR: 3,
+		SWORD: 4,
+		WILD: 5
+	};
+
+	const ITEM_BIASES = {};
+	ITEM_BIASES[ITEMS.GEM] = 1;
+	ITEM_BIASES[ITEMS.HEART] = 1.5;
+	ITEM_BIASES[ITEMS.SHIELD] = 2;
+	ITEM_BIASES[ITEMS.STAR] = 1.5;
+	ITEM_BIASES[ITEMS.SWORD] = 2;
+	ITEM_BIASES[ITEMS.WILD] = 1.0;
+
 	const INIT_LOOT = 0;
 	const INIT_HEALTH = 800;
 	const INIT_DEFENSE = 40;
@@ -79,11 +84,11 @@ const messages = require("./messages");
 
 			this.events.on("match", function(player, matches, how) {
 				
-				var gemCount = matches.count(GEM), 
-					heartCount = matches.count(HEART), 
-					shieldCount = matches.count(SHIELD), 
-					starCount = matches.count(STAR), 
-					swordCount = matches.count(SWORD);
+				var gemCount = matches.count(ITEMS.GEM), 
+					heartCount = matches.count(ITEMS.HEART), 
+					shieldCount = matches.count(ITEMS.SHIELD), 
+					starCount = matches.count(ITEMS.STAR), 
+					swordCount = matches.count(ITEMS.SWORD);
 				
 				if (gemCount > 0) {
 					
@@ -122,29 +127,30 @@ const messages = require("./messages");
 		}
 		
 		invItem(slot, player) {
-			return this.weightedRandomItem();
+			return this.weightedRandomItem([ITEMS.SWORD, ITEMS.HEART, ITEMS.GEM, ITEMS.STAR, ITEMS.SHIELD, ITEMS.WILD]);
 		}
 		
 		boardItem(x, y) {
-			return this.weightedRandomItem();
+			return this.weightedRandomItem([ITEMS.SWORD, ITEMS.HEART, ITEMS.GEM, ITEMS.STAR, ITEMS.SHIELD]);
 		}
-		
-		weightedRandomItem() {
-			var val = BIAS_COMBINED * Math.random();
-			
-			var test;
-			
-			if (val < (test = GEM_BIAS)) {
-				return GEM;
-			} else if (val < (test += HEART_BIAS)) {
-				return HEART;
-			} else if (val < (test += SHIELD_BIAS)) {
-				return SHIELD;
-			} else if (val < (test += STAR_BIAS)) {
-				return STAR;
-			} else if (val < (test += SWORD_BIAS)) {
-				return SWORD;
+
+		weightedRandomItem(items) {
+			var biasCombined = 0;
+
+			for (var i in items) {
+				biasCombined += ITEM_BIASES[items[i]]; 
 			}
+
+			var val = biasCombined * Math.random();
+			var test = 0;
+
+			for (var i in items) {
+				if (val < (test += ITEM_BIASES[items[i]])) {
+					return items[i];
+				}
+			}
+
+			return 0;
 		}
 		
 		gameProperties() {
@@ -405,6 +411,37 @@ const messages = require("./messages");
 			
 			return true;
 			
+		}
+
+		checkForMatches(x, y, item, matches) {
+
+			if (item == ITEMS.WILD) {
+
+				var items = [ ITEMS.SHIELD, ITEMS.SWORD, ITEMS.HEART, ITEMS.GEM, ITEMS.STAR ];
+				var matches2;
+				
+				for (var i in items) {
+
+					matches2 = new ItemArray();
+
+					this.getMatchingAdjacentItems (x, y, items[i], matches2);
+
+					if (matches2.length >= 3) {
+
+						for (var j in matches2) {
+							matches.push(matches2[j].item, matches2[j].x, matches2[j].y);
+						}
+						
+					}
+
+				}
+
+			} else {
+				
+				super.checkForMatches (x, y, item, matches);
+
+			}
+
 		}
 		
 		

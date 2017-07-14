@@ -66,11 +66,11 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		}
 		
 		invItem(slot, player) {
-			return Math.floor(Math.random() * 6);
+			return Math.floor(Math.random() * 5);
 		}
 		
 		boardItem(x, y) {
-			return Math.floor(Math.random() * 6);
+			return Math.floor(Math.random() * 5);
 		}
 	
 		randomizeBoard() {
@@ -489,8 +489,14 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			return true;
 			
 		}
-	
+
 		checkForMatches(x, y, item, matches) {
+
+			this.getMatchingAdjacentItems (x, y, item, matches);
+
+		}
+	
+		getMatchingAdjacentItems(x, y, item, matches) {
 			
 			if (!matches.contains(x, y)) {
 				matches.push(item, x, y);
@@ -517,17 +523,12 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		checkIfMatch(tx, ty, item, matches) {
 			var test = this.board[tx][ty];
 			
-			if (this.doItemsMatch(item, test) && !matches.contains(tx, ty)) {
-				matches.push(test, tx, ty);
-				this.checkForMatches(tx, ty, test, matches);
+			if (item == test && !matches.contains(tx, ty)) {
+				this.getMatchingAdjacentItems(tx, ty, test, matches);
 			}
 			
 		}
 
-		doItemsMatch(item1, item2) {
-			return item1 == item2;
-		}
-		
 		anyMatches(inv) {
 			var matches, item;
 		
