@@ -517,11 +517,15 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		checkIfMatch(tx, ty, item, matches) {
 			var test = this.board[tx][ty];
 			
-			if (test === item && !matches.contains(tx, ty)) {
+			if (this.doItemsMatch(item, test) && !matches.contains(tx, ty)) {
 				matches.push(test, tx, ty);
-				this.checkForMatches(tx, ty, item, matches);
+				this.checkForMatches(tx, ty, test, matches);
 			}
 			
+		}
+
+		doItemsMatch(item1, item2) {
+			return item1 == item2;
 		}
 		
 		anyMatches(inv) {
