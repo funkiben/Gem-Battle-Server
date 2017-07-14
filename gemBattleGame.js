@@ -419,6 +419,7 @@ const ItemArray = require("./itemArray");
 
 				var items = [ ITEMS.SHIELD, ITEMS.SWORD, ITEMS.HEART, ITEMS.GEM, ITEMS.STAR ];
 				var matches2;
+				var m;
 				
 				for (var i in items) {
 
@@ -429,7 +430,15 @@ const ItemArray = require("./itemArray");
 					if (matches2.length >= 3) {
 
 						for (var j in matches2) {
-							matches.push(matches2[j].item, matches2[j].x, matches2[j].y);
+							
+							m = matches2[j];
+
+							if (!matches.contains(m.x, m.y)) {
+
+								matches.push(m.item, m.x, m.y);
+
+							}
+
 						}
 						
 					}
