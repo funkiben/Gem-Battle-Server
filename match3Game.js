@@ -16,7 +16,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 	const DELETE_BOARD_ITEMS	=		21; // 1st byte how (0 = normal match), each byte after: 4 bits for x, 4 bits for y
 	const INITIALIZE_INVS =				22; // 12 bytes: 1 byte for each slot, first 6 are thisPlayer, last 6 are otherPlayer
 	const CREATE_INV_ITEMS = 			23; // 1st byte 0=thisPlayer or 1=otherPlayer: 8 bit sequences: 4 bits item, 4 bits slot
-	const MOVE_ITEM_FAILED = 			24; // 3 bytes: x, y, match type
+	const MOVE_ITEM_FAILED = 			24; // 4 bytes: x, y, match type, 0=thisPlayer or 1=otherPlayer
 	const OUT_OF_MOVES = 				31; // 1 byte: 0=thisPlayer or 1=otherPlayer
 	
 	const NORMAL_MATCH =				0;
@@ -331,20 +331,29 @@ messages.labelRegistry[4] = 'tryMoveItem';
 		
 		}
 	
-		moveItemFailed(x, y, player, how) {
-			var buf = messages.newMessage(MOVE_ITEM_FAILED, 3);
+		moveItemFailed(player, x, y, how) {
+			var buf1 = messages.newMessage(MOVE_ITEM_FAILED, 4);
+			var buf2 = messages.newMessage(MOVE_ITEM_FAILED, 4);
 			
-			if (player == this.player1) {
-				buf.writeInt8(x, 2);
-				buf.writeInt8(y, 3);
-			} else {
-				buf.writeInt8(this.width - 1 - x, 2);
-				buf.writeInt8(this.height - 1 - y, 3);
-			}
+			buf1.writeInt8(x, 2);
+			buf1.writeInt8(y, 3);
+			buf2.writeInt8(this.width - 1 - x, 2);
+			buf2.writeInt8(this.height - 1 - y, 3);
 			
-			buf.writeInt8(how, 4)
+			buf1.writeInt8(how, 4)
+			buf2.writeInt8(how, 4)
 		
-			player.write(buf);
+
+			if (player == this.player1) {
+				buf1.writeInt8(0, 5);
+				buf2.writeInt8(1, 5);
+			} else {
+				buf1.writeInt8(1, 5);
+				buf2.writeInt8(0, 5);
+			}
+
+			this.player1.write(buf1);
+			this.player2.write(buf2);
 		}
 		
 		outOfMoves(player) {
@@ -446,7 +455,7 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				
 			} else {
 			
-				this.moveItemFailed(x, y, player, how);
+				this.moveItemFailed(player, x, y, how);
 			
 			}
 		
