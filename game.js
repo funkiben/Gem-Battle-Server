@@ -3,6 +3,7 @@ EventEmitter = require("events");
 
 messages.labelRegistry[2] = 'setName';
 messages.labelRegistry[3] = 'leaveGame';
+messages.labelRegistry[5] = 'endTurn';
 
 (function() {
 
@@ -27,20 +28,31 @@ messages.labelRegistry[3] = 'leaveGame';
 			function callPlayer2Leave() {
 				game.playerLeft(game.player2);
 			}
+
+			function callPlayer1EndTurn() {
+				game.endTurn(game.player1);
+			}
+
+			function callPlayer2EndTurn() {
+				game.endTurn(game.player2);
+			}
 			
 			player1.messages.once("leaveGame", callPlayer1Leave);
-			
 			player2.messages.once("leaveGame", callPlayer2Leave);
 			
 			player1.once("end", callPlayer1Leave);
-			
 			player2.once("end", callPlayer2Leave);
+
+			player1.messages.on("endTurn", callPlayer1EndTurn);
+			player2.messages.on("endTurn", callPlayer2EndTurn);
 			
 			this.events.once("gameEnd", function() {
 				player1.removeListener("end", callPlayer1Leave);
 				player2.removeListener("end", callPlayer2Leave);
+				player1.messages.removeListener("endTurn", callPlayer1EndTurn);
+				player2.messages.removeListener("endTurn", callPlayer2EndTurn);
 			});
-			
+
 			this.giveOpponentsName();
 			this.setTurn(Math.random() > 0.5 ? this.player1 : this.player2);
 		
@@ -116,6 +128,16 @@ messages.labelRegistry[3] = 'leaveGame';
 			this.player2.write(buf2);
 			
 			this.events.emit("turn", player);
+		}
+
+		endTurn(player) {
+			
+			if (player == this.player1) {
+				this.setTurn(this.player2);
+			} else {
+				this.setTurn(this.player1);
+			}
+
 		}
 	
 	}

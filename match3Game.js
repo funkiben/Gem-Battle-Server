@@ -392,6 +392,16 @@ messages.labelRegistry[4] = 'tryMoveItem';
 			this.createInvItems(items, player);
 
 		}
+
+		endTurn(player) {
+			super.endTurn(player);
+
+			if (player == this.player1) {
+				this.refillInventory(this.player2Inv, this.player2);
+			} else {
+				this.refillInventory(this.player1Inv, this.player1);
+			}
+		}
 	
 		tryMoveItem(x, y, how, player) {
 			if (this.turn != player) {
@@ -416,43 +426,17 @@ messages.labelRegistry[4] = 'tryMoveItem';
 				} else {
 					this.fillUp();
 				}
-				
-				/*
-				var reInit = false;
 
-				while (!this.anyMatches(this.player2Inv) && !this.anyMatches(this.player1Inv)) {
-
-					this.randomizeBoard();
-
-					reInit = true;
-
-				}
-
-				if (reInit) {
-					reInitializeBoard();
-				}
-				*/
-				
 				if (player == this.player1) {
-
+					
 					if (!this.anyMatches(this.player1Inv)) {
 						this.outOfMoves(this.player1);
-						this.setTurn(this.player2);
-						this.refillInventory(this.player2Inv, this.player2);
-					} else {
-						this.setTurn(this.player1);
 					}
 
-
-				
 				} else {
 
 					if (!this.anyMatches(this.player2Inv)) {
 						this.outOfMoves(this.player2);
-						this.setTurn(this.player1);
-						this.refillInventory(this.player1Inv, this.player1);
-					} else {
-						this.setTurn(this.player2);
 					}
 				
 				}
