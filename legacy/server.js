@@ -2,20 +2,10 @@
 const net = require("net");
 const EventEmitter = require("events");
 const messages = require("./messages");
-
-const START = 2;
-const LEAVE = 3;
-const TRY_MOVE = 4;
-const END_TURN = 5;
-const NAME = 6;
-
-messages.labelRegistry[START] = "startGame";
-messages.labelRegistry[LEAVE] = "leave";
-messages.labelRegistry[TRY_MOVE] = "tryMove";
-messages.labelRegistry[END_TURN] = "endTurn";
-messages.labelRegistry[NAME] = "setName";
+const GemBattleGame = require("./gemBattleGame");
 
 var lookingForGame = null;
+
 
 var server = net.createServer(function (socket) {
 	console.log("client connected");
@@ -26,29 +16,18 @@ var server = net.createServer(function (socket) {
 	
 	socket.on("data", function(data) {
 		messages.call(socket.messages, data);
-
-		if (socket.opponent != null) {
-			socket.opponent.write(data);
-		}
 	});
-
-	socket.messages.on("startGame", function(data) {
+	
+	socket.messages.on("setName", function onSetName(data) {
+		socket.name = data.toString();
 		
 		if (lookingForGame == null) {
 			
 			lookingForGame = socket;
-
-			console.log(lookingForGame.name + " looking for game");
 			
 		} else {
 			
-			socket.opponent = lookingForGame;
-			lookingForGame.opponent = socket;
-
-			var msg = messages.newMessage(START, data.length);
-			data.copy(msg, 2);
-			msg.writeInt8(0, 4);
-			socket.write(msg);
+			socket.game = lookingForGame.game = new GemBattleGame(socket, lookingForGame, 6, 6);
 			
 			console.log("created new game with " + socket.name + " and " + lookingForGame.name);
 			
@@ -56,11 +35,6 @@ var server = net.createServer(function (socket) {
 			
 			
 		}
-
-	});
-	
-	socket.messages.on("setName", function onSetName(data) {
-		socket.name = data.toString();
 	});
 	
 	socket.on("end", function() {
